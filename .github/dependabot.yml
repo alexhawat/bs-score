@@ -1,0 +1,37 @@
+version: 2
+
+# Modeled on mergeCraft's grouping policy: patch + minor batch into one PR per
+# week, majors arrive alone (they deserve a changelog read), security fixes
+# never wait for the batch and never share a PR with routine bumps.
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      python-patch-minor:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types:
+          - patch
+          - minor
+      python-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      github-actions-patch-minor:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types:
+          - patch
+          - minor
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ["*"]
