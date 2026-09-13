@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "name": "bs_score",
+  "description": "Deterministic Bullshit Score (tag bs_score) from LLM findings. Starts at 0; higher means more bullshit.",
+  "dedupe_keys": [
+    "type",
+    "path"
+  ],
+  "confidence_affects_score": false,
+  "evidence_required": [
+    "path",
+    "quote"
+  ],
+  "types": {
+    "breaking_bug": {
+      "points": 5,
+      "description": "Crash, wrong result, or data loss"
+    },
+    "security_issue": {
+      "points": 4,
+      "description": "Auth, injection, secrets, or privilege issues"
+    },
+    "missing_feature": {
+      "points": 3,
+      "description": "Claimed in docs/README but not implemented"
+    },
+    "wrong_claim": {
+      "points": 2,
+      "description": "README/docs claim contradicted by code"
+    },
+    "bug": {
+      "points": 3,
+      "description": "Incorrect behavior that is not catastrophic"
+    }
+  },
+  "label": "Bullshit Score"
+}

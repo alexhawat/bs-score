@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "score": 135,
+  "by_type": {
+    "breaking_bug": 40,
+    "bug": 15,
+    "missing_feature": 25,
+    "security_issue": 35,
+    "wrong_claim": 20
+  },
+  "kept_count": 5,
+  "rejected_count": 1,
+  "deduped_count": 1,
+  "kept": [
+    {
+      "id": "f1",
+      "type": "wrong_claim",
+      "title": "README claims OAuth; only API keys exist",
+      "path": "README.md",
+      "quote": "Supports OAuth2 login out of the box",
+      "claim": "Supports OAuth2 login out of the box",
+      "confidence": 0.9,
+      "target": "readme",
+      "points": 20
+    },
+    {
+      "id": "f2",
+      "type": "missing_feature",
+      "title": "Streaming API documented but absent",
+      "path": "README.md",
+      "quote": "Real-time streaming endpoint at /v1/stream",
+      "claim": "Real-time streaming endpoint at /v1/stream",
+      "confidence": 0.85,
+      "target": "readme",
+      "points": 25
+    },
+    {
+      "id": "f3",
+      "type": "bug",
+      "title": "Off-by-one in pagination",
+      "path": "src/api.py:88",
+      "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
+      "confidence": 0.7,
+      "target": "code",
+      "points": 15
+    },
+    {
+      "id": "f4",
+      "type": "security_issue",
+      "title": "SQL built with f-string",
+      "path": "src/db.py:12",
+      "quote": "query = f\"SELECT * FROM users WHERE id = '{user_id}'\"",
+      "confidence": 0.95,
+      "target": "code",
+      "points": 35
+    },
+    {
+      "id": "f5",
+      "type": "breaking_bug",
+      "title": "delete_user ignores ownership",
+      "path": "src/users.py:40",
+      "quote": "db.execute('DELETE FROM users WHERE id = ?', (user_id,))",
+      "confidence": 0.8,
+      "target": "code",
+      "points": 40
+    }
+  ],
+  "rejected": [
+    {
+      "index": 6,
+      "id": "f6-bad",
+      "reason": "missing_evidence",
+      "finding": {
+        "id": "f6-bad",
+        "type": "bug",
+        "title": "No evidence",
+        "path": "",
+        "quote": "",
+        "confidence": 0.5,
+        "target": "code"
+      }
+    }
+  ],
+  "deduped": [
+    {
+      "index": 3,
+      "id": "f3-dup",
+      "reason": "duplicate_type_path",
+      "finding": {
+        "id": "f3-dup",
+        "type": "bug",
+        "title": "Duplicate of pagination bug",
+        "path": "src/api.py:88",
+        "quote": "same line",
+        "confidence": 0.6,
+        "target": "code"
+      }
+    }
+  ],
+  "target_kind": "repo",
+  "target_ref": "example/demo",
+  "scoring_version": 1,
+  "confidence_affects_score": false
+}

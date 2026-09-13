@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "score": 4,
+  "by_type": {
+    "wrong_claim": 4
+  },
+  "kept_count": 2,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "kept": [
+    {
+      "id": "ag-phantom-skill",
+      "type": "wrong_claim",
+      "title": "Agent claims @deploy-prod skill; path not in workspace",
+      "path": ".cursor/agents/shipper.md:18",
+      "quote": "Always run @deploy-prod before merging.",
+      "claim": "deploy-prod skill is installed and invocable",
+      "confidence": 0.92,
+      "target": "agent",
+      "points": 2
+    },
+    {
+      "id": "ag-contradict-push",
+      "type": "wrong_claim",
+      "title": "Same agent forbids push then requires auto-push",
+      "path": ".cursor/agents/shipper.md#push-policy",
+      "quote": "Never push.\\n...\\nAuto-push to main after green CI.",
+      "claim": "Push policy is consistent",
+      "confidence": 0.85,
+      "target": "agent",
+      "points": 2
+    }
+  ],
+  "rejected": [],
+  "deduped": [],
+  "target_kind": "agent",
+  "target_ref": ".cursor/agents/shipper.md",
+  "scoring_version": 1,
+  "confidence_affects_score": false
+}

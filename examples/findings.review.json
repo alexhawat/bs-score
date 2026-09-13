@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "target_kind": "review",
+  "target_ref": "alexhawat/mergeCraft#42 review:99",
+  "findings": [
+    {
+      "id": "rv-false-npe",
+      "type": "wrong_claim",
+      "title": "Review claims null deref; call site always passes non-null config",
+      "path": "review:comment:1001",
+      "quote": "This will NPE when config is None on line 88",
+      "claim": "config can be None at src/cli.py:88",
+      "confidence": 0.9,
+      "target": "review"
+    },
+    {
+      "id": "rv-hollow-verify",
+      "type": "missing_feature",
+      "title": "Review says secrets scanned; no secret-related files or checks mentioned",
+      "path": "review:body",
+      "quote": "Verified: no secrets in this diff",
+      "claim": "Review performed a secrets scan of the PR",
+      "confidence": 0.8,
+      "target": "review"
+    },
+    {
+      "id": "rv-missed-bug",
+      "type": "bug",
+      "title": "Review missed off-by-one in pagination changed in the PR",
+      "path": "src/api.py:88",
+      "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
+      "claim": "Review should have caught pagination off-by-one in the diff",
+      "confidence": 0.85,
+      "target": "diff"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/alexhawat/bots-agents-skills/skills/bs_score/findings.schema.json",
+  "title": "BsScoreFindings",
+  "type": "object",
+  "required": [
+    "version",
+    "target_kind",
+    "findings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "target_kind": {
+      "type": "string",
+      "enum": [
+        "repo",
+        "pr",
+        "branch",
+        "review",
+        "skill",
+        "agent"
+      ]
+    },
+    "target_ref": {
+      "type": "string",
+      "description": "Optional locator: repo URL, PR/branch, review id, skill path (e.g. skills/foo or .cursor/skills/bar), or agent path (e.g. .cursor/agents/x.md, .claude/agents/y.md)"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "path",
+          "quote",
+          "target"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "breaking_bug",
+              "security_issue",
+              "missing_feature",
+              "wrong_claim",
+              "bug"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Repo-relative path to evidence: README.md, file.py:42, diff hunk, review locator (review:body, pull/<n>/reviews/<id>[#suffix]), skill MD/script (skills/foo/SKILL.md:12), or agent config (.cursor/agents/x.md, .claude/agents/y.md, AGENTS.md)"
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Short verbatim excerpt from claim or code"
+          },
+          "claim": {
+            "type": "string",
+            "description": "Optional stated claim being audited"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Display-only; does not affect score"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "readme",
+              "code",
+              "diff",
+              "review",
+              "skill",
+              "agent",
+              "other"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
