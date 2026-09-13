@@ -48,7 +48,8 @@ $ uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixtu
 - `h2` — unverified_evidence: path_not_found: src/config.py does not exist
 ```
 
-Hallucinating costs points instead of earning them.
+Hallucinating earns nothing: a finding whose quote is not there is rejected,
+not scored — four confident fabrications add up to zero.
 
 <details>
 <summary>Install caveats</summary>
@@ -129,7 +130,7 @@ Markdown links, and fenced code blocks are checked deterministically, and
 
 | Mechanism | What it stops |
 |-----------|---------------|
-| **Evidence verification** | A quote not present in the named artifact is rejected before scoring — hallucinations cost points instead of earning them. |
+| **Evidence verification** | A quote not present in the named artifact is rejected before scoring — fabricated findings contribute 0, so padding an audit with hallucinations earns nothing. |
 | **Content-addressed dedupe** | `(type, canonical file, quote fingerprint)` is one finding, whether filed as `src/a.py:10`, `./src/a.py:11`, or copy-pasted into seven files. |
 | **Pinned weights** | Custom weights need `--allow-custom-scoring`; every report carries `scoring_sha256` + `schema_sha256`, and receipts reproduce byte-for-byte in CI. |
 | **Full schema enforcement** | Types, enums, `minLength`, numeric bounds — cross-checked against `jsonschema`; one malformed finding is rejected on its own. |
@@ -254,8 +255,10 @@ codeql-action upload-sarif step puts findings into code scanning.
 **MCP server (experimental)** — `uv pip install 'bs-score[mcp]'`, then
 `bs-score-mcp` exposes `audit` and `score` tools over stdio.
 
-**Self-audit** — CI scores this repo's own README on every PR
-(`examples/findings.self.json`, `--fail-over 0`).
+**Self-audit** — the v1 audit of this repository (`examples/findings.self.json`)
+is replayed as a CI gate on every PR (`--fail-over 0`): all eight defects it
+documented must stay fixed — reintroduce one, its quote verifies again, and CI
+goes red.
 
 ## Development
 

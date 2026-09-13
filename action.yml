@@ -65,17 +65,21 @@ runs:
         REF: ${{ inputs.ref }}
       run: |
         set -uo pipefail
-        args=("$FINDINGS" --repo-root "$REPO_ROOT" --format "$FORMAT" -o "report.$FORMAT" -q)
+        args=("$FINDINGS" --repo-root "$REPO_ROOT" -q)
         for src in $SOURCES; do args+=(--sources "$src"); done
         [ -n "$FAIL_OVER" ] && args+=(--fail-over "$FAIL_OVER")
         [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
-        uvx --from "git+https://github.com/alexhawat/bs_score@${REF}" bs-score "${args[@]}"
+        # report.json is always written so score/band outputs work in every
+        # format; the requested format gets its own artifact when it differs.
+        uvx --from "git+https://github.com/alexhawat/bs_score@${REF}" bs-score \
+          "${args[@]}" --format json -o report.json
         code=$?
         [ "$code" -le 1 ] || exit "$code"
-        report=$(cat "report.$FORMAT")
-        if [ "$FORMAT" = json ]; then
-          echo "score=$(printf '%s' "$report" | python3 -c 'import json,sys; print(json.load(sys.stdin)["score"])')" >> "$GITHUB_OUTPUT"
-          echo "band=$(printf '%s' "$report" | python3 -c 'import json,sys; print(json.load(sys.stdin)["band"])')" >> "$GITHUB_OUTPUT"
+        if [ "$FORMAT" != json ]; then
+          uvx --from "git+https://github.com/alexhawat/bs_score@${REF}" bs-score \
+            "${args[@]}" --format "$FORMAT" -o "report.$FORMAT" >/dev/null
         fi
+        echo "score=$(python3 -c 'import json; print(json.load(open("report.json"))["score"])')" >> "$GITHUB_OUTPUT"
+        echo "band=$(python3 -c 'import json; print(json.load(open("report.json"))["band"])')" >> "$GITHUB_OUTPUT"
         echo "report=report.$FORMAT" >> "$GITHUB_OUTPUT"
         exit "$code"
