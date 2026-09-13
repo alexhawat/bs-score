@@ -29,16 +29,51 @@ def test_wrapper_has_no_dirname_zero_fallback(agent_dir):
 
 
 @pytest.mark.parametrize("agent_dir", AGENT_DIRS, ids=lambda p: p.name)
-def test_wrapper_documents_a_command_that_runs(agent_dir):
+def test_wrapper_documents_a_clone_local_command(agent_dir):
+    """Static check: the wrapper prints `uv run bs-score`, which works in any
+    clone without a published package or a network install. Whether the command
+    *executes* is covered by the example runs in `test_examples.py`."""
     text = (agent_dir / "SKILL.md").read_text(encoding="utf-8")
-    assert "uvx --from git+" in text, "wrappers must document an install-free command"
+    assert "uv run bs-score findings.json" in text
 
 
-def test_uvx_command_is_the_documented_entry_point():
-    """The README must print a command that runs today, not one that needs a
-    PyPI release that has not happened."""
+UNPINNED_UVX = re.compile(
+    r"uvx\s+--from\s+[\"\']?git\+https://github\.com/alexhawat/bs_score(?!@)"
+)
+
+DOCS = sorted(
+    path
+    for path in REPO.rglob("*.md")
+    if not {".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build"} & set(path.parts)
+)
+
+
+@pytest.mark.parametrize("document", [*DOCS, REPO / "score.py"], ids=lambda p: p.name)
+def test_docs_never_print_an_unpinned_uvx_git_install(document):
+    """`uvx --from git+<repo>` with no `@ref` resolves the DEFAULT branch.
+
+    While `main` has no `pyproject.toml`, that command fails with "does not
+    appear to be a Python project" — so printing it as a runnable command is a
+    false claim. This is a static check only: that the published ref is really
+    installable is proven by the `uvx-install` CI job, which runs the real
+    command against the commit under test.
+    """
+    matches = UNPINNED_UVX.findall(document.read_text(encoding="utf-8"))
+    assert matches == [], f"{document.name} prints an unpinned uvx git install"
+
+
+def test_readme_documents_the_ref_requirement():
+    """Static check: the README states that the git install needs a ref with a
+    pyproject.toml, rather than implying the bare repo URL works."""
     readme = (REPO / "README.md").read_text(encoding="utf-8")
-    assert "uvx --from git+https://github.com/alexhawat/bs_score bs-score" in readme
+    assert "the ref must" in readme.lower()
+    assert "pyproject.toml" in readme
+
+
+def test_the_console_script_the_docs_tell_you_to_run_exists():
+    """`bs-score` and `uv run bs-score` are only real if the entry point is declared."""
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'bs-score = "bs_score.cli:run"' in pyproject
 
 
 # --- bug 2: "validates against findings.schema.json" was only half true -------

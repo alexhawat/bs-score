@@ -6,7 +6,7 @@ Inputs: the review body, its inline comments, and the PR's files and diff.
 Register the review text so its quotes are verifiable:
 
 ```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --repo-root . --sources review.json
+bs-score findings.json --repo-root . --sources review.json
 ```
 
 where `review.json` is `{"version": 1, "sources": [{"id": "review:body", "text": "…"}]}`.

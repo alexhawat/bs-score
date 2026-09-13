@@ -18,19 +18,6 @@ anything else that can follow a skill file and run a command.
 
 ## Install
 
-No clone needed to score:
-
-```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --repo-root .
-```
-
-Once the package is published, `uvx bs-score findings.json --repo-root .` is the
-short form.
-
-For the skill itself, point your agent at [`SKILL.md`](SKILL.md), or copy a
-per-runtime wrapper from [`agents/`](agents/) into your skills library
-(`~/.claude/skills/bs_score`, a Cursor skills path, …).
-
 From a clone:
 
 ```bash
@@ -40,6 +27,22 @@ uv run bs-score examples/findings.valid.json --repo-root examples/fixture-repo
 ```
 
 `python3 score.py findings.json` still works from a checkout.
+
+Without a clone, `uvx` can install straight from a git ref — but **the ref must
+contain `pyproject.toml`**, which means `main` at or after v2.0.0. CI proves the
+commit under test is installable this way:
+
+```bash
+uvx --from "git+https://github.com/alexhawat/bs_score@<ref>" bs-score findings.json --repo-root .
+```
+
+`<ref>` is a tag, branch, or commit sha — omit `@<ref>` only once the default
+branch carries the package. `uvx bs-score` (no `--from`) needs a PyPI release,
+which has not happened yet.
+
+For the skill itself, point your agent at [`SKILL.md`](SKILL.md), or copy a
+per-runtime wrapper from [`agents/`](agents/) into your skills library
+(`~/.claude/skills/bs_score`, a Cursor skills path, …).
 
 ## What it audits
 
@@ -120,7 +123,7 @@ code. Point it at a directory of prompt files, a `{"sources": [{"id", "text"}]}`
 manifest, a `.jsonl` stream, or a single file:
 
 ```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --sources prompts/
+bs-score findings.json --sources prompts/
 ```
 
 Findings then use `prompt:<id>` or `prompt:<id>:<line>` locators, where `<id>` is

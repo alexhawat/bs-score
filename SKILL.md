@@ -98,18 +98,20 @@ Per-runtime wrappers: [`agents/`](agents/).
 6. **Score it:**
 
 ```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --repo-root .
+bs-score findings.json --repo-root .        # installed
+uv run bs-score findings.json --repo-root . # from a clone of this repo
+python3 score.py findings.json --repo-root . # from a clone, no uv
 ```
 
 For prompts, review bodies, or anything else that is not a file in the tree,
 register it so its quotes can be checked too:
 
 ```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --sources prompts/                       # a directory
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --repo-root . --sources review.json      # {id, text} manifest
+bs-score findings.json --sources prompts/                   # a directory
+bs-score findings.json --repo-root . --sources review.json  # {id, text} manifest
 ```
 
-From a clone: `uv run bs-score …` or `python3 score.py …` are the same command.
+Install options are in the [README](README.md#install).
 
 7. **Report only what the script printed**: `score`, `by_type`, `kept` /
    `rejected` / `deduped`, and the paths of the kept findings. `--format md`

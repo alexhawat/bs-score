@@ -32,6 +32,23 @@ jobs:
       - name: Receipts match a fresh run
         run: uv run python scripts/check_receipts.py
 
+  uvx-install:
+    # The docs claim `uvx --from git+<repo>@<ref>` installs the scorer without a
+    # clone. This runs that exact command against the commit under test, so the
+    # claim is proven rather than grepped for.
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: astral-sh/setup-uv@v5
+      - name: Install and run from a git ref, with no checkout
+        env:
+          REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          uvx --from "git+https://github.com/${GITHUB_REPOSITORY}@${REF}" bs-score --version
+          uvx --from "git+https://github.com/${GITHUB_REPOSITORY}@${REF}" bs-score --help > /dev/null
+
   dogfood:
     runs-on: ubuntu-latest
     steps:

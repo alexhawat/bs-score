@@ -8,8 +8,8 @@ lives there.
 Register the prompts so their quotes are verified:
 
 ```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --sources prompts/              # directory of .md/.txt files
-uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json --sources prompts.json          # {"sources":[{"id","text"}]}
+bs-score findings.json --sources prompts/              # directory of .md/.txt files
+bs-score findings.json --sources prompts.json          # {"sources":[{"id","text"}]}
 ```
 
 Locators are `prompt:<id>` or `prompt:<id>:<line>`, where `<id>` is the file's

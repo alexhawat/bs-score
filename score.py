@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Compatibility shim: ``python3 score.py findings.json`` runs the bs-score CLI.
 
-The packaged entry point is ``bs-score``; ``uvx --from git+https://github.com/alexhawat/bs_score
-bs-score`` runs it with no clone at all.
-This file stays so the command printed in older SKILL.md copies keeps working from
-a checkout.
+The packaged entry point is ``bs-score`` (``uv run bs-score`` from a clone, or the
+installed console script). This file stays so the command printed in older SKILL.md
+copies keeps working from a checkout.
 """
 
 from __future__ import annotations
@@ -20,9 +19,9 @@ except ModuleNotFoundError as exc:  # pragma: no cover - dependency guidance pat
     missing = getattr(exc, "name", "a dependency")
     sys.stderr.write(
         f"bs_score needs {missing}. Install it with one of:\n"
-        f"  uv run score.py findings.json\n"
-        f"  uvx --from git+https://github.com/alexhawat/bs_score bs-score findings.json\n"
-        f"  pip install -e .\n"
+        f"  uv run score.py findings.json     # from this clone\n"
+        f"  uv sync --extra dev                # then: uv run bs-score ...\n"
+        f"  pip install -e .                   # then: bs-score ...\n"
     )
     raise SystemExit(2) from exc
 

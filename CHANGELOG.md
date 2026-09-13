@@ -23,9 +23,11 @@ The score now measures what the model *proved*, not what it *asserted*.
 - **Per-review-type weights.** One score, but `scoring.json` now carries a weight
   profile per `target_kind`. A breaking bug about to land in a PR, a reviewer's
   false claim, and an unsafe line in an agent config no longer cost the same.
-- **Packaging.** `uvx --from git+https://github.com/alexhawat/bs_score bs-score` runs
-  the scorer with no clone (and plain `uvx bs-score` once published); `pyproject.toml`
-  (hatchling), a `bs-score` console script, and `python -m bs_score`.
+- **Packaging.** `pyproject.toml` (hatchling), a `bs-score` console script,
+  `python -m bs_score`, and a committed `uv.lock`. `uvx --from
+  "git+https://github.com/alexhawat/bs_score@<ref>"` installs without a clone
+  once a ref carries the package; CI proves the commit under test is installable
+  that way.
 - **Loguru diagnostics** on stderr (`-v`, `-q`, `BS_SCORE_LOG_LEVEL`), leaving
   stdout a clean report.
 - **CI gating.** `--fail-over N` exits 1 above a threshold; exit 2 for unusable
