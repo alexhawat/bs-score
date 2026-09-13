@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "target_kind": "docs",
+  "target_ref": "examples/fixture-i18n",
+  "findings": [
+    {
+      "id": "fr-1",
+      "type": "wrong_claim",
+      "title": "README.fr nomme config/app.yaml ; le fichier est config/app.yml",
+      "path": "README.fr.md:9",
+      "quote": "Le fichier de configuration est `config/app.yaml`.",
+      "claim": "la configuration est dans config/app.yaml",
+      "confidence": 0.95,
+      "target": "readme"
+    },
+    {
+      "id": "ja-1",
+      "type": "wrong_claim",
+      "title": "README.ja は scripts/lancer.sh を促すが、実在するのは scripts/run.sh",
+      "path": "README.ja.md:12",
+      "quote": "`scripts/lancer.sh` を実行して起動します。",
+      "claim": "起動スクリプトは scripts/lancer.sh",
+      "confidence": 0.95,
+      "target": "readme"
+    }
+  ]
+}

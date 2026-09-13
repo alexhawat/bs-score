@@ -151,6 +151,9 @@ at a wrong line is kept and flagged `verified_wrong_line` (and rejected under
 - Findings JSON must not contain `score` or `points`; the payload is rejected.
 - Quotes are contiguous and verbatim. No ellipses, no paraphrase, no reflowing
   that changes the words.
+- Quotes stay verbatim in the artifact's own language — never translate a
+  quote. Finding titles may be in any language; the checklists are
+  language-agnostic.
 - Do not treat rejected findings as scored.
 - Prefer fewer high-evidence findings over speculative noise — but a docs-only
   audit is **incomplete** for `repo` / `pr` / `branch` / `skill`.

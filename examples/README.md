@@ -12,6 +12,7 @@ The quotes point at real text, so verification has something to verify:
 | `fixture-prompts/` | Two flawed prompts for the `prompt` review type |
 | `fixture-review/review.json` | A PR review body and comment, as a `--sources` manifest |
 | `fixture-docs/` | A guide whose claims are checkable against the tiny project beside it |
+| `fixture-i18n/` | French and Japanese READMEs — quotes verify verbatim in any language |
 
 ```bash
 uv run bs-score findings.valid.json  --repo-root fixture-repo                     # 17
@@ -21,6 +22,7 @@ uv run bs-score findings.skill.json  --repo-root fixture-repo                   
 uv run bs-score findings.agent.json  --repo-root fixture-repo                     # 6
 uv run bs-score findings.prompt.json --sources fixture-prompts                    # 18
 uv run bs-score findings.docs.json   --repo-root fixture-docs                     # 15
+uv run bs-score findings.i18n.json   --repo-root fixture-i18n                     # 10
 uv run bs-score findings.hallucinated.json --repo-root fixture-repo               # 0
 ```
 

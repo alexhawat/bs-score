@@ -31,6 +31,7 @@ INVOCATIONS: dict[str, list[str]] = {
     "agent": ["--repo-root", "examples/fixture-repo"],
     "prompt": ["--repo-root", ".", "--sources", "examples/fixture-prompts"],
     "docs": ["--repo-root", "examples/fixture-docs"],
+    "i18n": ["--repo-root", "examples/fixture-i18n"],
     "hallucinated": ["--repo-root", "examples/fixture-repo"],
     "self": ["--repo-root", "."],
 }
