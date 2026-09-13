@@ -113,7 +113,7 @@ def _argparse_flags(path: Path) -> set[str]:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (OSError, SyntaxError):
         return set()
-    flags: set[str] = set()
+    flags: set[str] = {"--help"}  # argparse always adds -h/--help
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
             continue

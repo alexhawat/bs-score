@@ -1,3 +1,16 @@
+# bs_score — full context for agents
+
+Your AI auditor lies. bs_score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
+
+Install (no clone): `uvx --from git+https://github.com/alexhawat/bs_score bs-score --help`
+
+Everything below is generated from the canonical sources by
+scripts/gen_llms_txt.py; CI fails if it drifts.
+
+================================================================================
+SKILL.md (verbatim)
+================================================================================
+
 ---
 name: bs_score
 description: >-
@@ -162,3 +175,61 @@ at a wrong line is kept and flagged `verified_wrong_line` (and rejected under
 - For `review`: never score a finding the review got right.
 - For `skill` / `agent` / `prompt`: read the text **and** the code, config, or
   tool list it depends on.
+
+================================================================================
+Weight table (rendered from scoring.json)
+================================================================================
+
+One score, starting at 0; higher = more bullshit. Score bands (display-only):
+0 clean · 1–5 minor drift · 6–15 misleading · 16+ bullshit.
+
+| type | `repo` | `pr` | `review` | `skill` | `agent` | `prompt` | `docs` | `branch` |
+|---|-------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
+| `breaking_bug` | 5 | 6 | 6 | 5 | 4 | 4 | 2 | 6 |
+| `security_issue` | 4 | 5 | 5 | 4 | 5 | 5 | 3 | 5 |
+| `missing_feature` | 3 | 2 | 3 | 4 | 3 | 2 | 3 | 2 |
+| `bug` | 3 | 3 | 4 | 3 | 2 | 3 | 1 | 3 |
+| `wrong_claim` | 2 | 2 | 3 | 3 | 3 | 3 | 5 | 2 |
+
+================================================================================
+Findings contract (summarised from findings.schema.json)
+================================================================================
+
+- Envelope: {version: 1|2, target_kind: one of ['repo', 'pr', 'branch', 'review', 'skill', 'agent', 'prompt', 'docs'], target_ref?: string, findings: [...]}. No other keys; `score` and `points` in a payload are rejected.
+- Finding required fields: ['id', 'type', 'title', 'path', 'quote', 'target']; optional: ['claim', 'confidence']. No other keys.
+- finding.type is one of ['breaking_bug', 'security_issue', 'missing_feature', 'bug', 'wrong_claim'].
+- finding.target is one of ['readme', 'code', 'diff', 'review', 'skill', 'agent', 'prompt', 'other'].
+- finding.path: `file[:line[-line]]`, `prompt:<id>[:line]`, or `review:` / `pull/<n>/reviews/<id>` locator. finding.quote: verbatim, contiguous, whitespace/typography-normalised at verification.
+- finding.confidence: 0–1, display-only.
+
+================================================================================
+CLI surface (rendered from the argparse definitions)
+================================================================================
+
+`bs-score FINDINGS` options:
+- `-h, --help` — show this help message and exit
+- `--repo-root` — Tree that file locators resolve against (default: the current directory)
+- `--no-verify` — Skip evidence verification entirely. The report is stamped 'skipped'.
+- `--sources` — Where non-file evidence lives: a directory of prompt files, a JSON/JSONL manifest of {id, text}, or a single text file. Repeatable.
+- `--require-evidence` — Also reject findings whose evidence could not be checked at all
+- `--strict-lines` — Reject findings whose quote is real but is not near the stated line
+- `--line-window` — Lines of slack allowed around a stated line number (default: 10)
+- `--fold-case` — Match quotes case-insensitively (str.casefold). Off by default: a quote that changes case is a changed quote.
+- `--fail-over` — Exit 1 when the score exceeds N (for CI gates)
+- `--format` — Report format on stdout (default: json; sarif for GitHub code scanning)
+- `--baseline` — Suppress findings already in this baseline file; only new findings score
+- `--write-baseline` — Write the kept findings as a baseline file for future --baseline runs
+- `-o, --output` — Also write the report here
+- `--scoring` — Alternative scoring.json (requires --allow-custom-scoring)
+- `--allow-custom-scoring` — Acknowledge that --scoring produces a score the published weights do not define
+- `-v, --verbose` — Repeat for more logs
+- `-q, --quiet` — Silence logging
+- `--version` — show program's version number and exit
+
+`bs-score claims DOC` options:
+- `-h, --help` — show this help message and exit
+- `--repo-root` — Tree that paths and packaging metadata resolve against (default: .)
+- `--check-links` — Also fetch http(s) link targets (off by default; needs network)
+- `--emit-findings` — Emit a findings payload (target_kind=docs) of the failed checks, ready to score with: bs-score findings.json --repo-root .
+- `-v, --verbose` — Repeat for more logs
+- `-q, --quiet` — Silence logging

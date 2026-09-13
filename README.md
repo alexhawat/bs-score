@@ -1,48 +1,117 @@
 # bs_score
 
-**Bullshit Score** — a portable audit skill (`@bs_score`) for any coding agent.
+[![ci](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml/badge.svg)](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 
-The LLM **finds** defects and quotes the evidence. `bs-score` **verifies every
-quote against the artifact it names**, then scores what survived. Higher = more
-bullshit. The number comes from the scorer, never from prose.
+**Your AI auditor lies. bs_score catches it — every claim is quoted, every quote
+is verified, and the score comes from code, not prose.**
 
-A fabricated audit scores **0**, because none of its quotes exist:
+The LLM *finds* defects and quotes the evidence. The `bs-score` CLI *verifies
+every quote against the artifact it names*, then scores what survived. Higher =
+more bullshit. A fabricated audit scores **0**, because none of its quotes
+exist.
 
-```bash
-uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
-# → score 0 — 4 rejected: quote_not_found ×3, path_not_found ×1
-```
-
-Works with Claude Code, Cursor, Codex, Grok Bot, OpenCode, Hermes, OpenClaw, and
-anything else that can follow a skill file and run a command.
-
-## Install
-
-From a clone:
+## 30-second demo
 
 ```bash
-git clone https://github.com/alexhawat/bs_score.git && cd bs_score
-uv sync --extra dev
-uv run bs-score examples/findings.valid.json --repo-root examples/fixture-repo
+uvx --from git+https://github.com/alexhawat/bs_score bs-score --help
 ```
 
-`python3 score.py findings.json` still works from a checkout.
+Then, from a clone (`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
 
-Without a clone, `uvx` can install straight from a git ref — but **the ref must
-contain `pyproject.toml`**, which means `main` at or after v2.0.0. CI proves the
-commit under test is installable this way:
+```console
+$ uv run bs-score examples/findings.valid.json --repo-root examples/fixture-repo --format md
+## Bullshit Score: **17** (bullshit)
 
-```bash
-uvx --from "git+https://github.com/alexhawat/bs_score@<ref>" bs-score findings.json --repo-root .
+- kept 5 · rejected 1 · deduped 1 · baselined 0
+- evidence: verified (verified 6)
+
+| `wrong_claim`     | 2 | README claims OAuth; only API keys exist |
+| `missing_feature` | 3 | Streaming API documented but absent      |
+| `bug`             | 3 | Off-by-one in pagination                 |
+| `security_issue`  | 4 | SQL built with f-string                  |
+| `breaking_bug`    | 5 | delete_user ignores ownership            |
 ```
 
-`<ref>` is a tag, branch, or commit sha — omit `@<ref>` only once the default
-branch carries the package. `uvx bs-score` (no `--from`) needs a PyPI release,
-which has not happened yet.
+Same CLI, an auditor that made everything up:
 
-For the skill itself, point your agent at [`SKILL.md`](SKILL.md), or copy a
-per-runtime wrapper from [`agents/`](agents/) into your skills library
-(`~/.claude/skills/bs_score`, a Cursor skills path, …).
+```console
+$ uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
+## Bullshit Score: **0** (clean)
+
+- kept 0 · rejected 4
+- evidence: verified (path_not_found 1, quote_not_found 3)
+
+### Rejected (not scored)
+- `h1` — unverified_evidence: quote_not_found: quote is not present in src/api.py
+- `h2` — unverified_evidence: path_not_found: src/config.py does not exist
+```
+
+Hallucinating costs points instead of earning them.
+
+<details>
+<summary>Install caveats</summary>
+
+- The one-liner above installs the default branch straight from git — no
+  clone, no virtualenv, thanks to `uv`. CI runs that exact command against
+  every commit (`uvx-install` job), so it is proven, not promised.
+- `uvx bs-score` (no `--from`) will work after the planned PyPI release;
+  today it has nothing to fetch.
+- From a clone, `uv run bs-score …` and `python3 score.py …` do the same
+  thing with no network at all.
+
+</details>
+
+## Use with your agent — one line
+
+Paste this into your agent:
+
+```text
+Add the bs_score skill from https://github.com/alexhawat/bs_score and verify it by auditing this repo.
+```
+
+Or wire it up per runtime:
+
+| Runtime | One-line setup |
+|---------|----------------|
+| Claude Code | `git clone https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score` |
+| Cursor | Clone anywhere, then `@` the root `SKILL.md` — or copy `agents/cursor/` into your skills path |
+| Codex | Append the root `SKILL.md` to your `AGENTS.md` |
+| Grok | Attach the root `SKILL.md` as the bot skill, or copy `agents/grok/` |
+| Hermes | Register `agents/hermes/` as a skill, or load the root `SKILL.md` |
+| OpenClaw | Register `agents/openclaw/` as a skill, or load the root `SKILL.md` |
+| OpenCode | Register `agents/opencode/` as a skill, or load the root `SKILL.md` |
+| **Any agent** | The paste line above — anything that can follow a skill file and run a command works |
+
+Either way the agent needs the `bs-score` CLI at scoring time; the git one-liner
+covers that. The PyPI release will make the scorer plain `uvx bs-score`,
+no clone at all.
+
+LLM-facing context files: [`llms.txt`](llms.txt) (index) and
+[`llms-full.txt`](llms-full.txt) (the whole recipe, weights, and schema in one
+fetch).
+
+## What it catches
+
+**Wrong information first** — that is the focus:
+
+- **README lies** — features, paths, flags, and version requirements the
+  project does not have.
+- **Phantom features** — capabilities asserted with no implementation behind
+  them.
+- **Stale docs** — quick-starts that cannot run as printed, drifted numbers,
+  dead links.
+- **Fabricated review claims** — "verified, no secrets" that nobody checked;
+  praise for code that does the opposite.
+
+Then the classics: logic and state bugs, injection and secrets, broken
+control flow, unsafe instructions in agent configs and prompts.
+
+The `bs-score claims <doc>` subcommand catches the mechanical slice of this
+**with no LLM at all** — paths, entry points, CLI flags, version strings,
+Markdown links, and fenced code blocks are checked deterministically, and
+`--emit-findings` turns each failure into a pre-verified `wrong_claim`.
 
 ## What it audits
 
@@ -54,19 +123,16 @@ per-runtime wrapper from [`agents/`](agents/) into your skills library
 | `skill` | A skill pack: `SKILL.md` + every script it names | [skill](checklists/skill.md) |
 | `agent` | Agent/persona configs (`.cursor/`, `.claude/`, `AGENTS.md`, …) | [agent](checklists/agent.md) |
 | `prompt` | One or many prompts — system, developer, tool, persona | [prompt](checklists/prompt.md) |
-| `docs` | A single document — claims vs what exists, no deep code pass | [docs](checklists/docs.md) |
+| `docs` | A single document — claims vs what exists, no code pass | [docs](checklists/docs.md) |
 
-## How the score is made honest
+## Why you can trust the number
 
 | Mechanism | What it stops |
 |-----------|---------------|
-| **Evidence verification** | Findings whose quote is not in the named artifact are rejected before scoring. Hallucinating costs points instead of earning them. |
-| **Content-addressed dedupe** | The key is `(type, canonical file, quote fingerprint)`. `src/a.py:10`, `./src/a.py:11` and `src/a.py` are one finding, not three. |
-| **Cross-path clustering** | One copy-pasted defect in seven files is one finding with seven `occurrences`. |
-| **Full schema enforcement** | Types, enums, `minLength`, and numeric bounds — not just required keys. Cross-checked against `jsonschema` in CI. |
-| **Pinned weights** | `--scoring` needs `--allow-custom-scoring`; weights must be non-negative integers. Every report carries `scoring_sha256` and `schema_sha256`. |
-| **Per-finding rejection** | One malformed finding is rejected on its own; it no longer discards the whole audit. |
-| **Exit codes** | `--fail-over N` exits 1 so a CI job can gate on a score. |
+| **Evidence verification** | A quote not present in the named artifact is rejected before scoring — hallucinations cost points instead of earning them. |
+| **Content-addressed dedupe** | `(type, canonical file, quote fingerprint)` is one finding, whether filed as `src/a.py:10`, `./src/a.py:11`, or copy-pasted into seven files. |
+| **Pinned weights** | Custom weights need `--allow-custom-scoring`; every report carries `scoring_sha256` + `schema_sha256`, and receipts reproduce byte-for-byte in CI. |
+| **Full schema enforcement** | Types, enums, `minLength`, numeric bounds — cross-checked against `jsonschema`; one malformed finding is rejected on its own. |
 
 ## Scoring
 
@@ -83,18 +149,26 @@ does not cost the same everywhere.
 | `wrong_claim` | A claim the artifact contradicts | 2 | 2 | 3 | 3 | 3 | 3 | 5 |
 
 Why they differ: a `pr` is a gate, so landing defects outweigh doc drift. A
-`review` is graded on its claims, and a real defect it missed costs more than a
-mislabelled one. A `skill` that advertises a capability it does not have is the
-defining skill failure. An `agent` or a `prompt` is an instruction surface, so
-unsafe instructions weigh most.
+`review` is graded on its claims. A `skill` that advertises a capability it
+does not have is the defining skill failure. An `agent` or a `prompt` is an
+instruction surface, so unsafe instructions weigh most. A `docs` audit is
+claims-only, so a wrong claim weighs most.
 
 Weights live in [`scoring.json`](scoring.json). `confidence` is display-only.
 
-## Worked examples
+**Score bands** (display-only; the raw sum is the score):
 
-Every number below is produced by the committed fixtures and asserted in CI.
-The artifacts the quotes point at live in `examples/fixture-*`, so verification
-has something real to check.
+| score | band |
+|------:|------|
+| 0 | clean |
+| 1–5 | minor drift |
+| 6–15 | misleading |
+| 16+ | bullshit |
+
+## Examples
+
+Every number below is produced by committed fixtures and asserted in CI; the
+artifacts the quotes point at live under `examples/`.
 
 | example | review type | score | shows |
 |---------|-------------|------:|-------|
@@ -102,99 +176,86 @@ has something real to check.
 | `findings.review.json` | `review` | **10** | False claim, hollow "verified", a defect the review missed |
 | `findings.skill.json` | `skill` | **7** | SKILL.md names a script that does not exist; documents the wrong flag |
 | `findings.agent.json` | `agent` | **6** | Phantom skill; "never push" next to "auto-push to main" |
-| `findings.prompt.json` | `prompt` | **18** | Injection surface, a token in the prompt, two self-contradictions, unspecified output |
+| `findings.prompt.json` | `prompt` | **18** | Injection surface, a token in the prompt, self-contradictions |
+| `findings.docs.json` | `docs` | **15** | A guide's three provable lies (Python floor, config path, phantom flag) |
+| `findings.i18n.json` | `docs` | **10** | French and Japanese READMEs — quotes verify verbatim in any language |
+| `findings.wild-tinycache.json` | `repo` | **8** | In-the-wild pattern: a 0.9 README promising 1.0 features |
+| `findings.wild-greetcli.json` | `docs` | **10** | In-the-wild pattern: phantom flag, understated Python floor |
 | `findings.hallucinated.json` | `repo` | **0** | Four confident fabrications, all rejected |
 
 ```bash
 uv run bs-score examples/findings.valid.json  --repo-root examples/fixture-repo
-uv run bs-score examples/findings.review.json --repo-root examples/fixture-repo \
-    --sources examples/fixture-review/review.json
-uv run bs-score examples/findings.skill.json  --repo-root examples/fixture-repo
-uv run bs-score examples/findings.agent.json  --repo-root examples/fixture-repo
+uv run bs-score examples/findings.docs.json   --repo-root examples/fixture-docs
 uv run bs-score examples/findings.prompt.json --repo-root . --sources examples/fixture-prompts
-uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 ```
 
 Each writes the same report as the committed `examples/score.*.json` receipt.
-
-## Auditing prompts
-
-`--sources` makes non-file evidence addressable, so prompts get verified like
-code. Point it at a directory of prompt files, a `{"sources": [{"id", "text"}]}`
-manifest, a `.jsonl` stream, or a single file:
-
-```bash
-bs-score findings.json --sources prompts/
-```
-
-Findings then use `prompt:<id>` or `prompt:<id>:<line>` locators, where `<id>` is
-the file's relative path (or its stem, when unambiguous). The same mechanism
-carries PR review bodies, which are not files either.
+Details: [`examples/README.md`](examples/README.md).
 
 ## CLI
 
 ```text
 bs-score FINDINGS [--repo-root DIR] [--sources PATH ...] [--no-verify]
                   [--require-evidence] [--strict-lines] [--line-window N]
-                  [--fail-over N] [--format json|md] [-o FILE]
+                  [--fold-case] [--fail-over N] [--format json|md|sarif]
+                  [--baseline FILE] [--write-baseline FILE] [-o FILE]
                   [--scoring FILE --allow-custom-scoring] [-v|-q]
+
+bs-score claims DOC [--repo-root DIR] [--check-links] [--emit-findings]
 ```
+
+Highlights:
 
 | flag | effect |
 |------|--------|
-| `--repo-root` | Tree that file locators resolve against (default: `.`) |
-| `--sources` | Prompt files, review bodies — anything not in the tree. Repeatable |
-| `--no-verify` | Skip verification; the report is stamped `skipped` |
-| `--require-evidence` | Also reject findings that could not be checked at all |
-| `--strict-lines` | Reject a real quote filed at the wrong line |
-| `--fail-over N` | Exit 1 when the score exceeds N |
-| `--format md` | Print a Markdown summary instead of JSON |
+| `--sources` | Register non-file evidence (prompt files, review bodies) so their quotes verify too |
+| `--fold-case` | Case-insensitive quote matching (str.casefold); exact is the default |
+| `--fail-over N` | Exit 1 when the score exceeds N — the CI gate |
+| `--format sarif` | SARIF 2.1.0 for GitHub code scanning |
+| `--baseline` / `--write-baseline` | Accept known findings once; gate only on new ones |
+| `claims` | LLM-free claim checks on a document; `--emit-findings` for a scorable payload |
 
-Exit codes: `0` scored and within threshold · `1` over `--fail-over` · `2`
-unusable input.
+Exit codes: `0` scored and within threshold · `1` over `--fail-over` (or
+`claims` found a provably false claim) · `2` unusable input.
 
-## Agent workflow
+## Integrations
 
-1. Map the claims the artifact makes.
-2. Deep-read the implementation (required for `repo` / `pr` / `branch` / `skill`).
-3. Cross-check, and quote the evidence **verbatim and contiguously**.
-4. Emit findings JSON only — [`findings.schema.json`](findings.schema.json), no
-   `score`, no `points`.
-5. `bs-score findings.json --repo-root .`
-6. Report only what the script printed.
+**GitHub Action** (composite, [`action.yml`](action.yml)):
 
-Full recipe and hard rules: [`SKILL.md`](SKILL.md). Per-review-type checklists:
-[`checklists/`](checklists/).
-
-## Layout
-
-```text
-.
-├── SKILL.md              # canonical agent recipe
-├── checklists/           # one per review type
-├── scoring.json          # review type → weights
-├── findings.schema.json  # findings contract, enforced in full
-├── src/bs_score/         # the scorer
-├── score.py              # `python3 score.py` shim for clones
-├── examples/             # findings, receipts, and the artifacts they quote
-├── agents/               # per-runtime wrappers (generated)
-└── scripts/              # wrapper generator
+```yaml
+- uses: alexhawat/bs_score@main
+  with:
+    findings: findings.json
+    fail-over: "10"
 ```
 
-## Agents
+Post the Markdown report as a PR comment:
 
-| Runtime | Folder |
-|---------|--------|
-| Claude Code | [`agents/claude`](agents/claude/) |
-| Cursor | [`agents/cursor`](agents/cursor/) |
-| Codex | [`agents/codex`](agents/codex/) |
-| Grok Bot | [`agents/grok`](agents/grok/) |
-| Hermes | [`agents/hermes`](agents/hermes/) |
-| OpenClaw | [`agents/openclaw`](agents/openclaw/) |
-| OpenCode | [`agents/opencode`](agents/opencode/) |
+```yaml
+- uses: alexhawat/bs_score@main
+  with: { findings: findings.json, format: md }
+- uses: actions/github-script@v7
+  if: always()
+  with:
+    script: |
+      const fs = require('fs');
+      await github.rest.issues.createComment({
+        owner: context.repo.owner, repo: context.repo.repo,
+        issue_number: context.issue.number,
+        body: fs.readFileSync('report.md', 'utf8'),
+      });
+```
 
-Wrappers are generated by [`scripts/gen_agent_wrappers.py`](scripts/gen_agent_wrappers.py);
-CI fails if a committed wrapper drifts from the template.
+**SARIF** — `bs-score findings.json --format sarif -o report.sarif`, then the
+codeql-action upload-sarif step puts findings into code scanning.
+
+**pre-commit** — hook id `bs-score` (see [`.pre-commit-hooks.yaml`](.pre-commit-hooks.yaml)).
+
+**MCP server (experimental)** — `uv pip install 'bs-score[mcp]'`, then
+`bs-score-mcp` exposes `audit` and `score` tools over stdio.
+
+**Self-audit** — CI scores this repo's own README on every PR
+(`examples/findings.self.json`, `--fail-over 0`).
 
 ## Development
 
@@ -204,10 +265,34 @@ uv run pytest
 uv run ruff check .
 uv run python scripts/gen_agent_wrappers.py --check   # wrappers are generated
 uv run python scripts/check_receipts.py               # receipts reproduce exactly
+uv run python scripts/gen_llms_txt.py --check         # llms.txt files are generated
 ```
 
-Releasing: `uv build && uv publish`. Until then, the git form above is the
-install-free command.
+Contributor rules for agents: [`AGENTS.md`](AGENTS.md). Releasing (owner-only):
+[`RELEASING.md`](RELEASING.md).
+
+## FAQ
+
+**Is the score objective?**
+No — it's *verifiable*. An LLM still chooses what to look for and how bad it
+is. What bs_score removes is the unverifiable part: every point traces to a
+quote that provably exists in the artifact, under pinned weights, with a
+sha256 receipt for the weights, the schema, and the findings. You can replay
+any score and get the same number.
+
+**What stops the agent gaming it?**
+Three things. *Rejection*: an invented quote is rejected, so padding the
+findings list with fabrications scores zero. *Dedupe*: the same defect filed
+five ways is one finding. *Pinned weights*: the agent can't propose its own
+points — findings JSON containing `score` or `points` is rejected outright,
+and custom weight files require an explicit `--allow-custom-scoring` flag that
+the report discloses.
+
+**Why does higher mean worse?**
+Because it counts bullshit, not quality. A 0 means everything the auditor
+said checked out — or the auditor said nothing verifiable, which the report
+shows separately (`rejected`, `not_verifiable`). Read the band, then read the
+kept findings.
 
 ## License
 
