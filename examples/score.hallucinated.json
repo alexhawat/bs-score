@@ -1,0 +1,104 @@
+{
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 0,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (fabricated audit)",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
+  "by_type": {},
+  "count_by_type": {},
+  "kept_count": 0,
+  "rejected_count": 4,
+  "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "path_not_found": 1,
+      "quote_not_found": 3
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "bafbc93df1329777ea7640094eca1bf53dc60f85bf25aff7aa90573e2546d69d",
+  "confidence_affects_score": false,
+  "kept": [],
+  "rejected": [
+    {
+      "index": 0,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in src/api.py",
+      "id": "h1",
+      "finding": {
+        "id": "h1",
+        "type": "breaking_bug",
+        "title": "Race condition in the async scoring worker",
+        "path": "src/api.py:410",
+        "quote": "await asyncio.gather(*[score_one(f) for f in findings])",
+        "confidence": 0.93,
+        "target": "code"
+      }
+    },
+    {
+      "index": 1,
+      "reason": "unverified_evidence",
+      "detail": "path_not_found: src/config.py does not exist",
+      "id": "h2",
+      "finding": {
+        "id": "h2",
+        "type": "security_issue",
+        "title": "Hardcoded API token",
+        "path": "src/config.py:7",
+        "quote": "API_TOKEN = \"sk-live-9f2b\"",
+        "confidence": 0.97,
+        "target": "code"
+      }
+    },
+    {
+      "index": 2,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in README.md",
+      "id": "h3",
+      "finding": {
+        "id": "h3",
+        "type": "missing_feature",
+        "title": "README advertises a --watch flag that does not exist",
+        "path": "README.md",
+        "quote": "Use --watch to re-score on every save",
+        "confidence": 0.88,
+        "target": "readme"
+      }
+    },
+    {
+      "index": 3,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in src/users.py",
+      "id": "h4",
+      "finding": {
+        "id": "h4",
+        "type": "wrong_claim",
+        "title": "Real line, wrong file",
+        "path": "src/users.py:3",
+        "quote": "query = f\"SELECT * FROM users WHERE id = '{user_id}'\"",
+        "confidence": 0.8,
+        "target": "code"
+      }
+    }
+  ],
+  "deduped": []
+}

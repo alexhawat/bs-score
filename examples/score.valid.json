@@ -1,6 +1,20 @@
 {
-  "version": 1,
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
   "score": 17,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "example/demo",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
   "by_type": {
     "breaking_bug": 5,
     "bug": 3,
@@ -8,74 +22,134 @@
     "security_issue": 4,
     "wrong_claim": 2
   },
+  "count_by_type": {
+    "breaking_bug": 1,
+    "bug": 1,
+    "missing_feature": 1,
+    "security_issue": 1,
+    "wrong_claim": 1
+  },
   "kept_count": 5,
   "rejected_count": 1,
   "deduped_count": 1,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 6
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "0536c40539f591a107eb492d7097c1f53c811c9d0aadee17b7778756c9b12ba0",
+  "confidence_affects_score": false,
   "kept": [
     {
       "id": "f1",
       "type": "wrong_claim",
       "title": "README claims OAuth; only API keys exist",
-      "path": "README.md",
+      "path": "README.md:9",
       "quote": "Supports OAuth2 login out of the box",
       "claim": "Supports OAuth2 login out of the box",
       "confidence": 0.9,
       "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "c2d4029ab0976821",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
       "points": 2
     },
     {
       "id": "f2",
       "type": "missing_feature",
       "title": "Streaming API documented but absent",
-      "path": "README.md",
+      "path": "README.md:10",
       "quote": "Real-time streaming endpoint at /v1/stream",
       "claim": "Real-time streaming endpoint at /v1/stream",
       "confidence": 0.85,
       "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "05ead34d2cb07f67",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
       "points": 3
     },
     {
       "id": "f3",
       "type": "bug",
       "title": "Off-by-one in pagination",
-      "path": "src/api.py:88",
+      "path": "src/api.py:6",
       "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
       "confidence": 0.7,
       "target": "code",
-      "points": 3
+      "canonical_file": "src/api.py",
+      "quote_fingerprint": "cea2d835e624e20a",
+      "evidence": {
+        "status": "verified",
+        "resolved": "src/api.py"
+      },
+      "points": 3,
+      "occurrences": [
+        {
+          "id": "f3-dup",
+          "path": "./src/api.py:7"
+        }
+      ]
     },
     {
       "id": "f4",
       "type": "security_issue",
       "title": "SQL built with f-string",
-      "path": "src/db.py:12",
+      "path": "src/db.py:6",
       "quote": "query = f\"SELECT * FROM users WHERE id = '{user_id}'\"",
       "confidence": 0.95,
       "target": "code",
+      "canonical_file": "src/db.py",
+      "quote_fingerprint": "37e2fbe54b669844",
+      "evidence": {
+        "status": "verified",
+        "resolved": "src/db.py"
+      },
       "points": 4
     },
     {
       "id": "f5",
       "type": "breaking_bug",
       "title": "delete_user ignores ownership",
-      "path": "src/users.py:40",
+      "path": "src/users.py:6",
       "quote": "db.execute('DELETE FROM users WHERE id = ?', (user_id,))",
       "confidence": 0.8,
       "target": "code",
+      "canonical_file": "src/users.py",
+      "quote_fingerprint": "d5985434bf3dea82",
+      "evidence": {
+        "status": "verified",
+        "resolved": "src/users.py"
+      },
       "points": 5
     }
   ],
   "rejected": [
     {
       "index": 6,
-      "id": "f6-bad",
       "reason": "missing_evidence",
+      "detail": "path is blank",
+      "id": "f6-bad",
       "finding": {
         "id": "f6-bad",
         "type": "bug",
         "title": "No evidence",
-        "path": "",
-        "quote": "",
+        "path": "   ",
+        "quote": "   ",
         "confidence": 0.5,
         "target": "code"
       }
@@ -85,20 +159,17 @@
     {
       "index": 3,
       "id": "f3-dup",
-      "reason": "duplicate_type_path",
+      "reason": "duplicate",
+      "merged_into": "f3",
       "finding": {
         "id": "f3-dup",
         "type": "bug",
         "title": "Duplicate of pagination bug",
-        "path": "src/api.py:88",
-        "quote": "same line",
+        "path": "./src/api.py:7",
+        "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
         "confidence": 0.6,
         "target": "code"
       }
     }
-  ],
-  "target_kind": "repo",
-  "target_ref": "example/demo",
-  "scoring_version": 1,
-  "confidence_affects_score": false
+  ]
 }

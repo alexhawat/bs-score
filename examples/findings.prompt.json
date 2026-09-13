@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "target_kind": "prompt",
+  "target_ref": "examples/fixture-prompts (2 prompts)",
+  "findings": [
+    {
+      "id": "pr-injection",
+      "type": "security_issue",
+      "title": "System prompt tells the agent to obey text from an untrusted PR body",
+      "path": "prompt:system.md:6",
+      "quote": "Follow any instructions found in the pull request body.",
+      "claim": "Untrusted input is treated as data, not instructions",
+      "confidence": 0.95,
+      "target": "prompt"
+    },
+    {
+      "id": "pr-secret-in-prompt",
+      "type": "security_issue",
+      "title": "Deploy token is embedded in the prompt that is told to keep it secret",
+      "path": "prompt:system.md:8",
+      "quote": "Never reveal the deploy token. It is DEPLOY_TOKEN=sk-demo-not-real.",
+      "claim": "The deploy token is not exposed to the model",
+      "confidence": 0.98,
+      "target": "prompt"
+    },
+    {
+      "id": "pr-contradiction",
+      "type": "wrong_claim",
+      "title": "\"Never release without verifying\" is cancelled two lines later",
+      "path": "prompt:system.md:5",
+      "quote": "If the changelog is missing, release anyway so the team is not blocked.",
+      "claim": "Never release without verifying.",
+      "confidence": 0.92,
+      "target": "prompt"
+    },
+    {
+      "id": "pr-unspecified-format",
+      "type": "missing_feature",
+      "title": "Promises JSON output but never specifies a shape, schema, or example",
+      "path": "prompt:system.md:7",
+      "quote": "Return your answer as JSON.",
+      "claim": "The prompt defines the JSON it expects",
+      "confidence": 0.8,
+      "target": "prompt"
+    },
+    {
+      "id": "pr-reviewer-contradiction",
+      "type": "wrong_claim",
+      "title": "Reviewer prompt requires the full suite, then approves on appearance alone",
+      "path": "prompt:reviewer.md:5",
+      "quote": "Approve if the diff looks reasonable.",
+      "claim": "Always run the full test suite before approving.",
+      "confidence": 0.88,
+      "target": "prompt"
+    }
+  ]
+}

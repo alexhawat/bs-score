@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "review:body",
+      "text": "## Summary\n\nLooks good overall. Change-scoped review of the 3 changed files.\n\nVerified: no secrets in this diff\nVerified: analyzer passed with no findings\n\nApproving."
+    },
+    {
+      "id": "review:comment:1001",
+      "text": "This will NPE when config is None on line 88"
+    }
+  ]
+}

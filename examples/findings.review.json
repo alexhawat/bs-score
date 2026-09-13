@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "target_kind": "review",
   "target_ref": "alexhawat/mergeCraft#42 review:99",
   "findings": [
@@ -27,7 +27,7 @@
       "id": "rv-missed-bug",
       "type": "bug",
       "title": "Review missed off-by-one in pagination changed in the PR",
-      "path": "src/api.py:88",
+      "path": "src/api.py:6",
       "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
       "claim": "Review should have caught pagination off-by-one in the diff",
       "confidence": 0.85,

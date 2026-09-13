@@ -7,7 +7,7 @@
       "id": "f1",
       "type": "wrong_claim",
       "title": "README claims OAuth; only API keys exist",
-      "path": "README.md",
+      "path": "README.md:9",
       "quote": "Supports OAuth2 login out of the box",
       "claim": "Supports OAuth2 login out of the box",
       "confidence": 0.9,
@@ -17,7 +17,7 @@
       "id": "f2",
       "type": "missing_feature",
       "title": "Streaming API documented but absent",
-      "path": "README.md",
+      "path": "README.md:10",
       "quote": "Real-time streaming endpoint at /v1/stream",
       "claim": "Real-time streaming endpoint at /v1/stream",
       "confidence": 0.85,
@@ -27,7 +27,7 @@
       "id": "f3",
       "type": "bug",
       "title": "Off-by-one in pagination",
-      "path": "src/api.py:88",
+      "path": "src/api.py:6",
       "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
       "confidence": 0.7,
       "target": "code"
@@ -36,8 +36,8 @@
       "id": "f3-dup",
       "type": "bug",
       "title": "Duplicate of pagination bug",
-      "path": "src/api.py:88",
-      "quote": "same line",
+      "path": "./src/api.py:7",
+      "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
       "confidence": 0.6,
       "target": "code"
     },
@@ -45,7 +45,7 @@
       "id": "f4",
       "type": "security_issue",
       "title": "SQL built with f-string",
-      "path": "src/db.py:12",
+      "path": "src/db.py:6",
       "quote": "query = f\"SELECT * FROM users WHERE id = '{user_id}'\"",
       "confidence": 0.95,
       "target": "code"
@@ -54,7 +54,7 @@
       "id": "f5",
       "type": "breaking_bug",
       "title": "delete_user ignores ownership",
-      "path": "src/users.py:40",
+      "path": "src/users.py:6",
       "quote": "db.execute('DELETE FROM users WHERE id = ?', (user_id,))",
       "confidence": 0.8,
       "target": "code"
@@ -63,8 +63,8 @@
       "id": "f6-bad",
       "type": "bug",
       "title": "No evidence",
-      "path": "",
-      "quote": "",
+      "path": "   ",
+      "quote": "   ",
       "confidence": 0.5,
       "target": "code"
     }

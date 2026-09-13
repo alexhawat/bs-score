@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (fabricated audit)",
+  "findings": [
+    {
+      "id": "h1",
+      "type": "breaking_bug",
+      "title": "Race condition in the async scoring worker",
+      "path": "src/api.py:410",
+      "quote": "await asyncio.gather(*[score_one(f) for f in findings])",
+      "confidence": 0.93,
+      "target": "code"
+    },
+    {
+      "id": "h2",
+      "type": "security_issue",
+      "title": "Hardcoded API token",
+      "path": "src/config.py:7",
+      "quote": "API_TOKEN = \"sk-live-9f2b\"",
+      "confidence": 0.97,
+      "target": "code"
+    },
+    {
+      "id": "h3",
+      "type": "missing_feature",
+      "title": "README advertises a --watch flag that does not exist",
+      "path": "README.md",
+      "quote": "Use --watch to re-score on every save",
+      "confidence": 0.88,
+      "target": "readme"
+    },
+    {
+      "id": "h4",
+      "type": "wrong_claim",
+      "title": "Real line, wrong file",
+      "path": "src/users.py:3",
+      "quote": "query = f\"SELECT * FROM users WHERE id = '{user_id}'\"",
+      "confidence": 0.8,
+      "target": "code"
+    }
+  ]
+}
