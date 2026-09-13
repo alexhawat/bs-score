@@ -20,9 +20,12 @@ dependencies = ["loguru>=0.7.2"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff>=0.6"]
+# Experimental: MCP server (stdio) exposing audit/score tools.
+mcp = ["mcp>=1.2"]
 
 [project.scripts]
 bs-score = "bs_score.cli:run"
+bs-score-mcp = "bs_score.mcp_server:run"
 
 [project.urls]
 Homepage = "https://github.com/alexhawat/bs_score"

@@ -1,0 +1,104 @@
+{
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 8,
+  "band": "misleading",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "tinycache@0.9 (synthetic-but-realistic snapshot)",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
+  "by_type": {
+    "missing_feature": 6,
+    "wrong_claim": 2
+  },
+  "count_by_type": {
+    "missing_feature": 2,
+    "wrong_claim": 1
+  },
+  "kept_count": 3,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "baselined_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/in-the-wild/tinycache",
+    "sources": [],
+    "line_window": 10,
+    "fold_case": false,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 3
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
+  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
+  "findings_sha256": "34c6ba04ab2c04ee60e664f2bc36185e3ed35c61663e0fdc11449eff932ea74e",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "w1",
+      "type": "wrong_claim",
+      "title": "Claims a lock per operation; there is no locking anywhere",
+      "path": "README.md:7",
+      "quote": "Thread-safe by design — every operation holds a lock",
+      "claim": "tinycache is thread-safe",
+      "confidence": 0.9,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "253ba8b6d3c55b5e",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 2
+    },
+    {
+      "id": "w2",
+      "type": "missing_feature",
+      "title": "LRU eviction advertised; the cache grows without bound",
+      "path": "README.md:8",
+      "quote": "LRU eviction when the cache is full",
+      "claim": "full caches evict least-recently-used entries",
+      "confidence": 0.85,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "073ed093d8093b0a",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 3
+    },
+    {
+      "id": "w3",
+      "type": "missing_feature",
+      "title": "TTL advertised; the ttl argument is accepted and ignored",
+      "path": "README.md:9",
+      "quote": "TTL support: entries expire automatically",
+      "claim": "entries expire after ttl seconds",
+      "confidence": 0.85,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "b0deebc41f95a19e",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 3
+    }
+  ],
+  "rejected": [],
+  "deduped": [],
+  "baselined": []
+}

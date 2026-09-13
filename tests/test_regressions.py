@@ -125,7 +125,8 @@ def test_validation_enforces_confidence_range():
 
 @pytest.mark.parametrize(
     "name",
-    ["valid", "review", "skill", "agent", "prompt", "docs", "i18n", "hallucinated", "self"],
+    ["valid", "review", "skill", "agent", "prompt", "docs", "i18n",
+     "wild-tinycache", "wild-greetcli", "hallucinated", "self"],
 )
 def test_every_example_payload_is_schema_valid(name, schema):
     jsonschema = pytest.importorskip("jsonschema")

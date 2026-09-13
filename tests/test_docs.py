@@ -11,7 +11,7 @@ from bs_score.cli import build_parser
 
 SKIP_DIRS = {
     ".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build",
-    "fixture-repo", "fixture-docs", "fixture-i18n",
+    "fixture-repo", "fixture-docs", "fixture-i18n", "tinycache", "greetcli",
 }
 
 MARKDOWN = sorted(
@@ -42,7 +42,7 @@ def test_documented_flags_exist(document):
     # Flags belonging to other tools, or quoted as examples of a *broken* claim.
     ignore = {
         "--from", "--extra", "--wheel", "--python", "--check", "--write",
-        "--prod", "--environment", "--watch", "--no-verify",
+        "--prod", "--environment", "--watch", "--no-verify", "--shout",
     }
     text = document.read_text(encoding="utf-8")
     mentioned = set(re.findall(r"(?<![\w-])(--[a-z][a-z0-9-]+)", text))
