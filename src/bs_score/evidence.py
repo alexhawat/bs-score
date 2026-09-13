@@ -76,6 +76,7 @@ class Verifier:
         sources: SourceRegistry | None = None,
         *,
         line_window: int = DEFAULT_LINE_WINDOW,
+        fold_case: bool = False,
     ) -> None:
         # `given_root` goes in the receipt so a report stays portable across
         # machines; `repo_root` is the resolved path used for containment checks.
@@ -83,6 +84,7 @@ class Verifier:
         self.repo_root = repo_root.resolve() if repo_root else None
         self.sources = sources or SourceRegistry()
         self.line_window = line_window
+        self.fold_case = fold_case
         self._cache: dict[str, str | None] = {}
 
     @property
@@ -96,7 +98,7 @@ class Verifier:
             return Verdict(SKIPPED, "verification disabled")
 
         locator = locators.parse(str(finding.get("path", "")))
-        quote = locators.normalize_text(str(finding.get("quote", "")))
+        quote = locators.normalize_text(str(finding.get("quote", "")), fold_case=self.fold_case)
         if not quote:
             return Verdict(QUOTE_NOT_FOUND, "quote is empty after normalisation")
 
@@ -108,7 +110,7 @@ class Verifier:
             return verdict
         assert text is not None
 
-        if quote not in locators.normalize_text(text):
+        if quote not in locators.normalize_text(text, fold_case=self.fold_case):
             return Verdict(
                 QUOTE_NOT_FOUND,
                 f"quote is not present in {locator.ref}",
@@ -123,7 +125,7 @@ class Verifier:
         end = locator.line_end or locator.line_start
         low = max(0, locator.line_start - 1 - self.line_window)
         high = min(len(lines), end + self.line_window)
-        window = locators.normalize_text("\n".join(lines[low:high]))
+        window = locators.normalize_text("\n".join(lines[low:high]), fold_case=self.fold_case)
         if quote in window:
             return Verdict(VERIFIED, resolved=locator.ref)
         return Verdict(

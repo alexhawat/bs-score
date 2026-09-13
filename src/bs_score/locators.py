@@ -61,15 +61,22 @@ class Locator:
         return self.kind == FILE and (self.ref.startswith("/") or ":" in self.ref.split("/")[0])
 
 
-def normalize_text(text: str) -> str:
-    """Fold a string to its comparison form: NFKC, plain punctuation, single spaces."""
+def normalize_text(text: str, *, fold_case: bool = False) -> str:
+    """Fold a string to its comparison form: NFKC, plain punctuation, single spaces.
+
+    With ``fold_case``, case is folded too (``str.casefold``), so quotes match
+    case-insensitively. Off by default: a quote that changes case is a changed
+    quote, and changed quotes are what verification exists to catch.
+    """
     folded = unicodedata.normalize("NFKC", text).translate(_TYPOGRAPHY)
-    return re.sub(r"\s+", " ", folded).strip()
+    collapsed = re.sub(r"\s+", " ", folded).strip()
+    return collapsed.casefold() if fold_case else collapsed
 
 
-def quote_fingerprint(quote: str) -> str:
+def quote_fingerprint(quote: str, *, fold_case: bool = False) -> str:
     """Stable short digest of a quote's comparison form."""
-    return hashlib.sha256(normalize_text(quote).encode("utf-8")).hexdigest()[:16]
+    folded = normalize_text(quote, fold_case=fold_case)
+    return hashlib.sha256(folded.encode("utf-8")).hexdigest()[:16]
 
 
 def canonical_file(ref: str) -> str:

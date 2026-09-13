@@ -59,6 +59,7 @@ class Options:
     require_evidence: bool = False
     strict_lines: bool = False
     fail_over: int | None = None
+    fold_case: bool = False
 
 
 def _evidence_ok(finding: dict[str, Any], required: tuple[str, ...]) -> str | None:
@@ -171,7 +172,9 @@ def build_report(
             continue
 
         locator = locators.parse(str(finding["path"]))
-        fingerprint = locators.quote_fingerprint(str(finding["quote"]))
+        fingerprint = locators.quote_fingerprint(
+            str(finding["quote"]), fold_case=options.fold_case
+        )
         key = _dedupe_key(finding, locator, fingerprint, scoring)
 
         target_index = seen_keys.get(key)
@@ -235,6 +238,7 @@ def build_report(
             "repo_root": verifier.given_root.as_posix() if verifier.given_root else None,
             "sources": verifier.sources.ids,
             "line_window": verifier.line_window,
+            "fold_case": options.fold_case,
             "require_evidence": options.require_evidence,
             "strict_lines": options.strict_lines,
             "by_status": dict(sorted(evidence_counts.items())),

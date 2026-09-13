@@ -30,6 +30,7 @@
     "repo_root": "examples/fixture-docs",
     "sources": [],
     "line_window": 10,
+    "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
     "by_status": {

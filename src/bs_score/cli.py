@@ -92,6 +92,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Lines of slack allowed around a stated line number (default: {DEFAULT_LINE_WINDOW})",
     )
     parser.add_argument(
+        "--fold-case",
+        action="store_true",
+        help="Match quotes case-insensitively (str.casefold). Off by default: a "
+        "quote that changes case is a changed quote.",
+    )
+    parser.add_argument(
         "--fail-over",
         type=int,
         metavar="N",
@@ -166,7 +172,9 @@ def main(argv: list[str] | None = None) -> int:
         logger.error(str(exc))
         return EXIT_INVALID
 
-    verifier = Verifier(repo_root, sources, line_window=args.line_window)
+    verifier = Verifier(
+        repo_root, sources, line_window=args.line_window, fold_case=args.fold_case
+    )
     if not verifier.enabled:
         logger.warning(
             "evidence verification is off; the score reflects what the model asserted, "
@@ -177,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
         require_evidence=args.require_evidence,
         strict_lines=args.strict_lines,
         fail_over=args.fail_over,
+        fold_case=args.fold_case,
     )
     try:
         report = build_report(

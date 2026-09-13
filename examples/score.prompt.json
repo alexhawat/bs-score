@@ -39,6 +39,7 @@
       "system.md"
     ],
     "line_window": 10,
+    "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
     "by_status": {
