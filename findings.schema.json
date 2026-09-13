@@ -14,7 +14,7 @@
     },
     "target_kind": {
       "type": "string",
-      "enum": ["repo", "pr", "branch", "review", "skill", "agent", "prompt"],
+      "enum": ["repo", "pr", "branch", "review", "skill", "agent", "prompt", "docs"],
       "description": "Review type. Selects the weight profile in scoring.json."
     },
     "target_ref": {

@@ -43,6 +43,13 @@ def test_agent_and_prompt_profiles_weight_unsafe_instructions_highest(scoring):
         assert weights["security_issue"] == max(weights.values()), name
 
 
+def test_docs_profile_weights_wrong_claim_highest(scoring):
+    """A claims-only audit lives and dies by contradicted statements."""
+    weights = scoring.profiles["docs"].weights
+    assert weights["wrong_claim"] == max(weights.values())
+    assert weights["wrong_claim"] > weights["bug"]
+
+
 def test_unknown_review_type_falls_back_to_the_default(scoring):
     assert scoring.profile_for("nonsense").name == scoring.default_profile
 
@@ -51,7 +58,7 @@ def test_confidence_never_affects_the_score(scoring):
     assert scoring.confidence_affects_score is False
 
 
-PROFILE_COLUMNS = ["repo", "pr", "review", "skill", "agent", "prompt"]
+PROFILE_COLUMNS = ["repo", "pr", "review", "skill", "agent", "prompt", "docs"]
 
 
 def _weight_table_from_markdown(text: str) -> dict[str, list[int]]:

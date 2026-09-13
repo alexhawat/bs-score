@@ -33,6 +33,25 @@ class PayloadError(ValueError):
     """The findings envelope is unusable, so no score can be produced."""
 
 
+#: Score bands, display-only. The raw sum is the score; the band is a label for
+#: humans reading a report in isolation. ``(upper_bound, label)``; the last
+#: band is unbounded.
+BANDS: tuple[tuple[int | None, str], ...] = (
+    (0, "clean"),
+    (5, "minor drift"),
+    (15, "misleading"),
+    (None, "bullshit"),
+)
+
+
+def score_band(score: int) -> str:
+    """Display label for a score: 0 clean · 1–5 minor drift · 6–15 misleading · 16+ bullshit."""
+    for upper, label in BANDS:
+        if upper is None or score <= upper:
+            return label
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 @dataclass(frozen=True)
 class Options:
     """Knobs that change a report's meaning, recorded in the receipt."""
@@ -198,6 +217,7 @@ def build_report(
         "bs_score_version": __version__,
         "label": scoring.label,
         "score": total,
+        "band": score_band(total),
         "verdict": verdict_label,
         "fail_over": options.fail_over,
         "target_kind": target_kind,
@@ -247,7 +267,7 @@ def sha256_of_document(document: Any) -> str:
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
     lines = [
-        f"## {report['label']}: **{report['score']}**",
+        f"## {report['label']}: **{report['score']}** ({report['band']})",
         "",
         f"- review type: `{report['target_kind']}` (profile `{report['profile']}`)",
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
@@ -283,6 +303,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 __all__ = [
+    "BANDS",
     "CROSS_PATH_DUPLICATE",
     "DUPLICATE",
     "MISSING_EVIDENCE",
@@ -293,5 +314,6 @@ __all__ = [
     "UNVERIFIED_EVIDENCE",
     "build_report",
     "render_markdown",
+    "score_band",
     "sha256_of_document",
 ]

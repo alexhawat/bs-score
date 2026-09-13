@@ -28,6 +28,7 @@ EXAMPLE_INVOCATIONS: dict[str, list[str]] = {
     "skill": ["--repo-root", "examples/fixture-repo"],
     "agent": ["--repo-root", "examples/fixture-repo"],
     "prompt": ["--repo-root", ".", "--sources", "examples/fixture-prompts"],
+    "docs": ["--repo-root", "examples/fixture-docs"],
     "hallucinated": ["--repo-root", "examples/fixture-repo"],
     "self": ["--repo-root", "."],
 }

@@ -9,7 +9,10 @@ from conftest import REPO
 
 from bs_score.cli import build_parser
 
-SKIP_DIRS = {".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build", "fixture-repo"}
+SKIP_DIRS = {
+    ".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build",
+    "fixture-repo", "fixture-docs", "fixture-i18n",
+}
 
 MARKDOWN = sorted(
     path for path in REPO.rglob("*.md") if not SKIP_DIRS & set(path.parts)

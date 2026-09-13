@@ -54,6 +54,7 @@ per-runtime wrapper from [`agents/`](agents/) into your skills library
 | `skill` | A skill pack: `SKILL.md` + every script it names | [skill](checklists/skill.md) |
 | `agent` | Agent/persona configs (`.cursor/`, `.claude/`, `AGENTS.md`, …) | [agent](checklists/agent.md) |
 | `prompt` | One or many prompts — system, developer, tool, persona | [prompt](checklists/prompt.md) |
+| `docs` | A single document — claims vs what exists, no deep code pass | [docs](checklists/docs.md) |
 
 ## How the score is made honest
 
@@ -73,13 +74,13 @@ One score. Start at **0**, unbounded sum, **higher = worse**. The five finding
 types are fixed; the weights depend on the review type, because the same defect
 does not cost the same everywhere.
 
-| type | meaning | `repo` | `pr` `branch` | `review` | `skill` | `agent` | `prompt` |
-|------|---------|-------:|--------------:|---------:|--------:|--------:|---------:|
-| `breaking_bug` | Crash, wrong result, data loss, dead workflow | 5 | 6 | 6 | 5 | 4 | 4 |
-| `security_issue` | Auth, injection, secrets, unsafe instructions | 4 | 5 | 5 | 4 | 5 | 5 |
-| `missing_feature` | Asserted capability with no implementation | 3 | 2 | 3 | 4 | 3 | 2 |
-| `bug` | Incorrect behaviour, not catastrophic | 3 | 3 | 4 | 3 | 2 | 3 |
-| `wrong_claim` | A claim the artifact contradicts | 2 | 2 | 3 | 3 | 3 | 3 |
+| type | meaning | `repo` | `pr` `branch` | `review` | `skill` | `agent` | `prompt` | `docs` |
+|------|---------|-------:|--------------:|---------:|--------:|--------:|---------:|-------:|
+| `breaking_bug` | Crash, wrong result, data loss, dead workflow | 5 | 6 | 6 | 5 | 4 | 4 | 2 |
+| `security_issue` | Auth, injection, secrets, unsafe instructions | 4 | 5 | 5 | 4 | 5 | 5 | 3 |
+| `missing_feature` | Asserted capability with no implementation | 3 | 2 | 3 | 4 | 3 | 2 | 3 |
+| `bug` | Incorrect behaviour, not catastrophic | 3 | 3 | 4 | 3 | 2 | 3 | 1 |
+| `wrong_claim` | A claim the artifact contradicts | 2 | 2 | 3 | 3 | 3 | 3 | 5 |
 
 Why they differ: a `pr` is a gate, so landing defects outweigh doc drift. A
 `review` is graded on its claims, and a real defect it missed costs more than a

@@ -2,6 +2,7 @@
   "bs_score_version": "2.0.0",
   "label": "Bullshit Score",
   "score": 6,
+  "band": "misleading",
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "agent",
@@ -36,8 +37,8 @@
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
-  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
+  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
   "findings_sha256": "ce7d87e66bc04e448afb4318db5075bae71c15ec97ff1fed0092016e1722476b",
   "confidence_affects_score": false,
   "kept": [

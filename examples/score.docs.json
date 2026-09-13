@@ -1,0 +1,99 @@
+{
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 15,
+  "band": "misleading",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "docs",
+  "target_ref": "examples/fixture-docs/guide.md",
+  "profile": "docs",
+  "profile_description": "Claims-only audit of a document. Nothing but contradictions between what the text says and what exists; a wrong claim is the defining docs failure, so it weighs most.",
+  "weights": {
+    "breaking_bug": 2,
+    "bug": 1,
+    "missing_feature": 3,
+    "security_issue": 3,
+    "wrong_claim": 5
+  },
+  "by_type": {
+    "wrong_claim": 15
+  },
+  "count_by_type": {
+    "wrong_claim": 3
+  },
+  "kept_count": 3,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-docs",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 3
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
+  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
+  "findings_sha256": "8aaf3fc105e39ab829081dc3989e6121ea87daf48967e5e6eda426ee48931d99",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "d1",
+      "type": "wrong_claim",
+      "title": "Guide says Python 3.9; pyproject requires 3.11",
+      "path": "guide.md:9",
+      "quote": "Requires Python 3.9 or newer.",
+      "claim": "poller installs on Python 3.9+",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "69162aac3c58ef9e",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5
+    },
+    {
+      "id": "d2",
+      "type": "wrong_claim",
+      "title": "Guide names config/poller.yaml; the file is config/poller.yml",
+      "path": "guide.md:18",
+      "quote": "Put your URL list in `config/poller.yaml`",
+      "claim": "configuration lives at config/poller.yaml",
+      "confidence": 0.9,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "de9f6587b7bb2ca5",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5
+    },
+    {
+      "id": "d3",
+      "type": "wrong_claim",
+      "title": "Guide documents `poller --serve`; the CLI has no such flag",
+      "path": "guide.md:31",
+      "quote": "poller --serve",
+      "claim": "poller has a --serve daemon mode",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "fa85573703af40d0",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5
+    }
+  ],
+  "rejected": [],
+  "deduped": []
+}

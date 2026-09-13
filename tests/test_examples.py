@@ -29,6 +29,7 @@ def test_documented_scores():
         "skill": 7,
         "agent": 6,
         "prompt": 18,
+        "docs": 15,
         "hallucinated": 0,
         "self": 0,
     }
