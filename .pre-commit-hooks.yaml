@@ -1,0 +1,19 @@
+# Wire bs_score into pre-commit.com:
+#
+#   - repo: https://github.com/alexhawat/bs_score
+#     rev: v2.1.0
+#     hooks:
+#       - id: bs-score
+#         args: [--repo-root, ., --fail-over, "10"]
+#
+# The hook scores any findings JSON it is handed (name one explicitly with
+# `files:` if your findings don't match the default JSON filter).
+- id: bs-score
+  name: bs-score
+  description: >-
+    Verify bs_score findings against the artifacts they quote and score what
+    survived. Fails when the score exceeds --fail-over.
+  entry: bs-score
+  language: python
+  types: [json]
+  pass_filenames: true

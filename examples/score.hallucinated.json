@@ -21,6 +21,7 @@
   "kept_count": 0,
   "rejected_count": 4,
   "deduped_count": 0,
+  "baselined_count": 0,
   "evidence": {
     "mode": "verified",
     "repo_root": "examples/fixture-repo",
@@ -102,5 +103,6 @@
       }
     }
   ],
-  "deduped": []
+  "deduped": [],
+  "baselined": []
 }

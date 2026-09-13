@@ -16,6 +16,7 @@ from pathlib import Path
 from loguru import logger
 
 from . import __version__
+from .baseline import BaselineError, load_baseline, write_baseline
 from .claims import audit_document, claims_as_findings
 from .evidence import DEFAULT_LINE_WINDOW, Verifier
 from .logging_setup import configure
@@ -27,6 +28,7 @@ from .resources import (
     load_json_file,
     locate,
 )
+from .sarif import render_sarif
 from .scoring import ScoringError, load_scoring
 from .sources import SourceError, load_sources
 
@@ -106,9 +108,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=("json", "md"),
+        choices=("json", "md", "sarif"),
         default="json",
-        help="Report format on stdout (default: json)",
+        help="Report format on stdout (default: json; sarif for GitHub code scanning)",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        metavar="FILE",
+        help="Suppress findings already in this baseline file; only new findings score",
+    )
+    parser.add_argument(
+        "--write-baseline",
+        type=Path,
+        metavar="FILE",
+        help="Write the kept findings as a baseline file for future --baseline runs",
     )
     parser.add_argument("-o", "--output", type=Path, help="Also write the report here")
     parser.add_argument(
@@ -249,11 +263,20 @@ def main(argv: list[str] | None = None) -> int:
             "not what it proved"
         )
 
+    baseline_keys: frozenset[tuple[str, str, str]] = frozenset()
+    if args.baseline:
+        try:
+            baseline_keys = load_baseline(args.baseline)
+        except BaselineError as exc:
+            logger.error(str(exc))
+            return EXIT_INVALID
+
     options = Options(
         require_evidence=args.require_evidence,
         strict_lines=args.strict_lines,
         fail_over=args.fail_over,
         fold_case=args.fold_case,
+        baseline=baseline_keys,
     )
     try:
         report = build_report(
@@ -269,11 +292,15 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("findings payload is unusable: {}", exc)
         return EXIT_INVALID
 
-    text = (
-        render_markdown(report)
-        if args.format == "md"
-        else json.dumps(report, indent=2, ensure_ascii=False) + "\n"
-    )
+    if args.write_baseline:
+        write_baseline(args.write_baseline, report["kept"])
+
+    if args.format == "md":
+        text = render_markdown(report)
+    elif args.format == "sarif":
+        text = json.dumps(render_sarif(report), indent=2, ensure_ascii=False) + "\n"
+    else:
+        text = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text, encoding="utf-8")

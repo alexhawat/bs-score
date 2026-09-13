@@ -17,6 +17,7 @@ from typing import Any
 
 from loguru import logger
 
+from . import baseline as baseline_mod
 from . import locators, schema_validate
 from .evidence import Verdict, Verifier
 from .scoring import Scoring
@@ -60,6 +61,8 @@ class Options:
     strict_lines: bool = False
     fail_over: int | None = None
     fold_case: bool = False
+    #: Dedupe keys of accepted findings, loaded from --baseline.
+    baseline: frozenset[tuple[str, str, str]] = frozenset()
 
 
 def _evidence_ok(finding: dict[str, Any], required: tuple[str, ...]) -> str | None:
@@ -126,6 +129,7 @@ def build_report(
     kept: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     deduped: list[dict[str, Any]] = []
+    baselined: list[dict[str, Any]] = []
     by_type: Counter[str] = Counter()
     count_by_type: Counter[str] = Counter()
     evidence_counts: Counter[str] = Counter()
@@ -196,6 +200,22 @@ def build_report(
             )
             continue
 
+        if baseline_mod.key_of(
+            {"type": finding["type"], "canonical_file": locator.ref,
+             "quote_fingerprint": fingerprint}
+        ) in options.baseline:
+            baselined.append(
+                {
+                    **finding,
+                    "canonical_file": locator.ref,
+                    "quote_fingerprint": fingerprint,
+                    "evidence": verdict.as_dict(),
+                }
+            )
+            # Not registered in seen_keys: an identical later finding is
+            # baselined on its own key, not merged into this one.
+            continue
+
         points = profile.points(str(finding["type"]))
         by_type[str(finding["type"])] += points
         count_by_type[str(finding["type"])] += 1
@@ -233,6 +253,7 @@ def build_report(
         "kept_count": len(kept),
         "rejected_count": len(rejected),
         "deduped_count": len(deduped),
+        "baselined_count": len(baselined),
         "evidence": {
             "mode": "verified" if verifier.enabled else "skipped",
             "repo_root": verifier.given_root.as_posix() if verifier.given_root else None,
@@ -251,6 +272,7 @@ def build_report(
         "kept": kept,
         "rejected": rejected,
         "deduped": deduped,
+        "baselined": baselined,
     }
     logger.info(
         "score {} ({} kept, {} rejected, {} deduped)",
@@ -276,7 +298,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- review type: `{report['target_kind']}` (profile `{report['profile']}`)",
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
         f"- kept {report['kept_count']} · rejected {report['rejected_count']} "
-        f"· deduped {report['deduped_count']}",
+        f"· deduped {report['deduped_count']} · baselined {report['baselined_count']}",
         f"- evidence: {report['evidence']['mode']} "
         f"({', '.join(f'{k} {v}' for k, v in report['evidence']['by_status'].items()) or 'n/a'})",
         f"- scoring `{report['scoring_sha256'][:12]}` · schema `{report['schema_sha256'][:12]}`",
@@ -302,6 +324,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         for entry in report["rejected"]:
             label = entry.get("id", entry["index"])
             lines.append(f"- `{label}` — {entry['reason']}: {entry['detail']}")
+        lines.append("")
+    if report["baselined"]:
+        lines += ["### Baselined (accepted, not scored)", ""]
+        for finding in report["baselined"]:
+            lines.append(f"- `{finding['id']}` — {finding['title']} (`{finding['path']}`)")
         lines.append("")
     return "\n".join(lines)
 

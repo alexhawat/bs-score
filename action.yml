@@ -1,0 +1,81 @@
+name: bs_score
+description: >-
+  Verify and score bs_score findings deterministically. Every quoted claim is
+  checked against the artifact it names; only verified findings score.
+author: alexhawat
+branding:
+  icon: check-circle
+  color: red
+
+inputs:
+  findings:
+    description: Path to the findings JSON to score.
+    required: true
+  repo-root:
+    description: Tree that file locators resolve against.
+    required: false
+    default: .
+  sources:
+    description: >-
+      Extra evidence sources (prompt dir, review manifest). Space-separated.
+    required: false
+    default: ""
+  fail-over:
+    description: Exit 1 when the score exceeds this number (CI gate).
+    required: false
+    default: ""
+  baseline:
+    description: Baseline file of accepted findings; only new findings score.
+    required: false
+    default: ""
+  format:
+    description: Report format written to the output and printed to the log.
+    required: false
+    default: json
+  ref:
+    description: Git ref of alexhawat/bs_score to run (tag, branch, or sha).
+    required: false
+    default: main
+
+outputs:
+  score:
+    description: The Bullshit Score (higher = more bullshit).
+    value: ${{ steps.score.outputs.score }}
+  band:
+    description: Score band — clean, minor drift, misleading, bullshit.
+    value: ${{ steps.score.outputs.band }}
+  report:
+    description: Path to the full report file (report.json or report.md).
+    value: ${{ steps.score.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v5
+
+    - id: score
+      shell: bash
+      env:
+        FINDINGS: ${{ inputs.findings }}
+        REPO_ROOT: ${{ inputs.repo-root }}
+        SOURCES: ${{ inputs.sources }}
+        FAIL_OVER: ${{ inputs.fail-over }}
+        BASELINE: ${{ inputs.baseline }}
+        FORMAT: ${{ inputs.format }}
+        REF: ${{ inputs.ref }}
+      run: |
+        set -uo pipefail
+        args=("$FINDINGS" --repo-root "$REPO_ROOT" --format "$FORMAT" -o "report.$FORMAT" -q)
+        for src in $SOURCES; do args+=(--sources "$src"); done
+        [ -n "$FAIL_OVER" ] && args+=(--fail-over "$FAIL_OVER")
+        [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
+        uvx --from "git+https://github.com/alexhawat/bs_score@${REF}" bs-score "${args[@]}"
+        code=$?
+        [ "$code" -le 1 ] || exit "$code"
+        report=$(cat "report.$FORMAT")
+        if [ "$FORMAT" = json ]; then
+          echo "score=$(printf '%s' "$report" | python3 -c 'import json,sys; print(json.load(sys.stdin)["score"])')" >> "$GITHUB_OUTPUT"
+          echo "band=$(printf '%s' "$report" | python3 -c 'import json,sys; print(json.load(sys.stdin)["band"])')" >> "$GITHUB_OUTPUT"
+        fi
+        echo "report=report.$FORMAT" >> "$GITHUB_OUTPUT"
+        exit "$code"

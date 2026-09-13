@@ -29,6 +29,7 @@
   "kept_count": 5,
   "rejected_count": 0,
   "deduped_count": 0,
+  "baselined_count": 0,
   "evidence": {
     "mode": "verified",
     "repo_root": ".",
@@ -139,5 +140,6 @@
     }
   ],
   "rejected": [],
-  "deduped": []
+  "deduped": [],
+  "baselined": []
 }
