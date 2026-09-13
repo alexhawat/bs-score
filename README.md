@@ -15,9 +15,7 @@ cd bs_score
 
 Point your agent at `SKILL.md`, or copy this folder into your skills library (`~/.claude/skills/`, Cursor skills, etc.).
 
-Thin pointers for Grok / Hermes / OpenClaw live in
-[alexhawat/bots-agents-skills](https://github.com/alexhawat/bots-agents-skills)
-(`grok_bots/bs_score`, `hermes/bs_score`, `openclaw/bs_score`).
+Per-agent install notes live under [`agents/`](agents/) (Claude, Cursor, Codex, Grok Bot, Hermes, OpenClaw, OpenCode).
 
 ## What it does
 
@@ -150,17 +148,32 @@ Full recipe, checklists, and prompt sketches: [`SKILL.md`](SKILL.md).
 
 ```text
 .
-├── SKILL.md              # agent recipe (all runtimes)
+├── SKILL.md              # canonical agent recipe
 ├── scoring.json          # type → points
 ├── findings.schema.json  # findings contract (validated by score.py)
 ├── score.py              # deterministic scorer
-└── examples/             # sample findings + score receipts
+├── examples/             # sample findings + score receipts
+└── agents/               # per-runtime skill wrappers
 ```
+
+## Agents
+
+| Runtime | Folder |
+|---------|--------|
+| Claude Code | [`agents/claude`](agents/claude/) |
+| Cursor | [`agents/cursor`](agents/cursor/) |
+| Codex | [`agents/codex`](agents/codex/) |
+| Grok Bot | [`agents/grok`](agents/grok/) |
+| Hermes | [`agents/hermes`](agents/hermes/) |
+| OpenClaw | [`agents/openclaw`](agents/openclaw/) |
+| OpenCode | [`agents/opencode`](agents/opencode/) |
+
+Each folder’s `SKILL.md` points at this repo’s root `SKILL.md` + `score.py`. Copy or symlink the folder into that runtime’s skills library, or clone this repo and set `BS_SCORE_ROOT`.
 
 ## Related
 
-- Monorepo pointers: [alexhawat/bots-agents-skills](https://github.com/alexhawat/bots-agents-skills)
-- Live skill in Grok Bot fleet: tag `bs_score` / [bs-score](https://github.com/alexhawat/bots-agents-skills)
+- Catalog reference (link only): [alexhawat/bots-agents-skills](https://github.com/alexhawat/bots-agents-skills)
+
 
 ## License
 

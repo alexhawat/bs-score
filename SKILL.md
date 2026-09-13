@@ -24,10 +24,8 @@ skills/bs_score/
 ```
 
 Canonical publish: [alexhawat/bs_score](https://github.com/alexhawat/bs_score) (this repo).
-Thin pointers for Grok Bot / Hermes / OpenClaw live in
-[alexhawat/bots-agents-skills](https://github.com/alexhawat/bots-agents-skills)
-under `grok_bots/bs_score/`, `hermes/bs_score/`, `openclaw/bs_score/` and
-run `score.py` from a clone of **this** repo (no `.py` under hermes/openclaw).
+Per-runtime wrappers: [`agents/`](agents/) (Claude, Cursor, Codex, Grok, Hermes, OpenClaw, OpenCode).
+Catalog reference only: [alexhawat/bots-agents-skills](https://github.com/alexhawat/bots-agents-skills).
 
 ## Score rules (locked)
 
