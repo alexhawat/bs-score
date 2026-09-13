@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bs-score"
-version = "2.0.0"
+version = "2.1.0"
 description = "Bullshit Score: an LLM finds defects with evidence; bs-score verifies the evidence and scores it deterministically."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -12,8 +12,16 @@ authors = [{ name = "Alex Hawat" }]
 requires-python = ">=3.10"
 keywords = ["llm", "eval", "audit", "code-review", "agent", "skill", "prompt"]
 classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = ["loguru>=0.7.2"]
@@ -30,6 +38,8 @@ bs-score-mcp = "bs_score.mcp_server:run"
 [project.urls]
 Homepage = "https://github.com/alexhawat/bs_score"
 Source = "https://github.com/alexhawat/bs_score"
+Issues = "https://github.com/alexhawat/bs_score/issues"
+Changelog = "https://github.com/alexhawat/bs_score/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bs_score"]
@@ -41,7 +51,7 @@ packages = ["src/bs_score"]
 "findings.schema.json" = "bs_score/data/findings.schema.json"
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "examples", "agents", "*.json", "*.md", "*.py", "LICENSE"]
+include = ["src", "tests", "examples", "agents", "*.json", "*.md", "*.txt", "*.py", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
