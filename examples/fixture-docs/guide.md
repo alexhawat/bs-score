@@ -1,7 +1,7 @@
 # poller guide
 
 poller checks a list of URLs on a schedule and appends the results to a JSON
-file. This guide is the artifact under audit in `examples/findings.docs.json`:
+file. This guide is the artifact under audit by the committed docs example:
 three of its claims are false.
 
 ## Install
