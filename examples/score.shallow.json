@@ -1,0 +1,92 @@
+{
+  "bs_score_version": "2.1.0",
+  "label": "Bullshit Score",
+  "score": 2,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (docs-only pass)",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
+  "by_type": {
+    "wrong_claim": 2
+  },
+  "count_by_type": {
+    "wrong_claim": 1
+  },
+  "kept_count": 1,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 10,
+    "files_affected": [
+      "README.md"
+    ]
+  },
+  "depth": {
+    "status": "shallow",
+    "requires_code_pass": true,
+    "files_read": 2,
+    "code_files_read": 0,
+    "doc_files_read": 2,
+    "missing_files": [
+      "src/does_not_exist.py"
+    ],
+    "tree_files": 10,
+    "coverage": 0.2,
+    "notes": "Skimmed the docs."
+  },
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "require_depth": false,
+    "by_status": {
+      "verified": 1
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1f400e21826bf91d68e06e50e333fb1cc13e624841798c119519d1de654525ea",
+  "schema_sha256": "2af4b7a1475ca72931f9ef55bdfb23bc1827de5cf6e558a700b54dc2768b3103",
+  "findings_sha256": "64233a0f781bc0a4f01574a0e3112c46aaf246e9ae96dafd5aa24f9e2864a211",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "s1",
+      "type": "wrong_claim",
+      "title": "README claims OAuth; only API keys exist",
+      "path": "README.md:9",
+      "quote": "Supports OAuth2 login out of the box",
+      "confidence": 0.8,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "c2d4029ab0976821",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 2,
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 9
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    }
+  ],
+  "rejected": [],
+  "deduped": []
+}

@@ -27,9 +27,18 @@ EXAMPLE_INVOCATIONS: dict[str, list[str]] = {
     ],
     "skill": ["--repo-root", "examples/fixture-repo"],
     "agent": ["--repo-root", "examples/fixture-repo"],
-    "prompt": ["--repo-root", ".", "--sources", "examples/fixture-prompts"],
+    "prompt": [
+        "--repo-root",
+        "examples/fixture-prompts",
+        "--sources",
+        "examples/fixture-prompts",
+    ],
     "hallucinated": ["--repo-root", "examples/fixture-repo"],
-    "self": ["--repo-root", "."],
+    "blast": ["--repo-root", "examples/fixture-repo"],
+    "shallow": ["--repo-root", "examples/fixture-repo"],
+    # The self-audit gate only asserts "none of these quotes exist any more", so a
+    # whole-repo sweep would add nothing but a file count that churns on every commit.
+    "self": ["--repo-root", ".", "--no-scan"],
 }
 
 

@@ -30,6 +30,8 @@ def test_documented_scores():
         "agent": 6,
         "prompt": 18,
         "hallucinated": 0,
+        "blast": 5,
+        "shallow": 2,
         "self": 0,
     }
 
@@ -66,3 +68,23 @@ def test_the_v1_audit_no_longer_verifies_against_this_tree():
     assert receipt["score"] == 0
     assert receipt["rejected_count"] == 8
     assert receipt["evidence"]["by_status"] == {"quote_not_found": 8}
+
+
+def test_dogfood_properties_hold():
+    """Runs `scripts/check_dogfood.py`, the same assertions CI makes.
+
+    Executes the real CLI for each claim rather than asserting on a receipt, so a
+    change that only updates the committed receipts cannot make it pass.
+    """
+    import subprocess
+    import sys
+
+    from conftest import REPO
+
+    result = subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "check_dogfood.py")],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr

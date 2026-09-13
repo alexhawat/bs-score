@@ -17,9 +17,11 @@ from typing import Any
 
 from loguru import logger
 
+from . import depth as depth_module
 from . import locators, schema_validate
 from .evidence import Verdict, Verifier
 from .scoring import Scoring
+from .sweep import TreeIndex
 
 SCHEMA_INVALID = "schema_invalid"
 MISSING_EVIDENCE = "missing_evidence"
@@ -27,6 +29,7 @@ UNVERIFIED_EVIDENCE = "unverified_evidence"
 UNVERIFIABLE_EVIDENCE = "unverifiable_evidence"
 DUPLICATE = "duplicate"
 CROSS_PATH_DUPLICATE = "duplicate_across_paths"
+SAME_CLUSTER = "same_root_cause"
 
 
 class PayloadError(ValueError):
@@ -39,6 +42,8 @@ class Options:
 
     require_evidence: bool = False
     strict_lines: bool = False
+    require_depth: bool = False
+    scan: bool = True
     fail_over: int | None = None
 
 
@@ -71,6 +76,13 @@ def _dedupe_key(
     return tuple(values)
 
 
+def _cluster_key(finding: dict[str, Any], scoring: Scoring) -> tuple[str, ...] | None:
+    """Key that collapses differently-worded reports of one root cause."""
+    if not finding.get("cluster"):
+        return None
+    return tuple(str(finding.get(key, "")) for key in scoring.dedupe.cluster_keys)
+
+
 def build_report(
     payload: Any,
     scoring: Scoring,
@@ -80,6 +92,7 @@ def build_report(
     options: Options | None = None,
     *,
     findings_sha256: str = "",
+    tree: TreeIndex | None = None,
 ) -> dict[str, Any]:
     """Score a payload and return the full report document.
 
@@ -111,7 +124,8 @@ def build_report(
     evidence_counts: Counter[str] = Counter()
     seen_ids: set[str] = set()
     seen_keys: dict[tuple[str, ...], int] = {}
-    seen_clusters: dict[tuple[str, str], int] = {}
+    seen_quotes: dict[tuple[str, str], int] = {}
+    seen_clusters: dict[tuple[str, ...], int] = {}
     total = 0
 
     def reject(index: int, finding: Any, reason: str, detail: str) -> None:
@@ -155,14 +169,22 @@ def build_report(
         fingerprint = locators.quote_fingerprint(str(finding["quote"]))
         key = _dedupe_key(finding, locator, fingerprint, scoring)
 
+        cluster_key = _cluster_key(finding, scoring)
+
         target_index = seen_keys.get(key)
         reason = DUPLICATE
+        if target_index is None and cluster_key is not None:
+            target_index = seen_clusters.get(cluster_key)
+            reason = SAME_CLUSTER
         if target_index is None and scoring.dedupe.cluster_cross_path:
-            target_index = seen_clusters.get((str(finding["type"]), fingerprint))
+            target_index = seen_quotes.get((str(finding["type"]), fingerprint))
             reason = CROSS_PATH_DUPLICATE
         if target_index is not None:
-            occurrence = {"id": finding_id, "path": str(finding["path"])}
-            kept[target_index].setdefault("occurrences", []).append(occurrence)
+            merged_entry = {"id": finding_id, "path": str(finding["path"])}
+            kept[target_index].setdefault("merged", []).append(merged_entry)
+            # A cluster's blast radius is the union of its members' quotes, so a
+            # root cause worded three ways is still counted everywhere it lands.
+            kept[target_index].setdefault("_merged_quotes", []).append(str(finding["quote"]))
             deduped.append(
                 {
                     "index": index,
@@ -188,10 +210,22 @@ def build_report(
             }
         )
         seen_keys[key] = len(kept) - 1
-        seen_clusters.setdefault((str(finding["type"]), fingerprint), len(kept) - 1)
+        seen_quotes.setdefault((str(finding["type"]), fingerprint), len(kept) - 1)
+        if cluster_key is not None:
+            seen_clusters.setdefault(cluster_key, len(kept) - 1)
+
+    if tree is not None and options.scan:
+        _attach_blast_radius(kept, tree)
+    else:
+        for finding in kept:
+            finding.pop("_merged_quotes", None)
+
+    depth_report = depth_module.evaluate(payload, target_kind, scoring.depth, tree)
 
     verdict_label = "pass"
     if options.fail_over is not None and total > options.fail_over:
+        verdict_label = "fail"
+    if options.require_depth and not depth_report.sufficient:
         verdict_label = "fail"
 
     report: dict[str, Any] = {
@@ -210,6 +244,18 @@ def build_report(
         "kept_count": len(kept),
         "rejected_count": len(rejected),
         "deduped_count": len(deduped),
+        "blast_radius": {
+            "mode": "scanned" if (tree is not None and options.scan) else "not_scanned",
+            "tree_files": tree.file_count if (tree is not None and options.scan) else None,
+            "files_affected": sorted(
+                {
+                    occurrence["path"]
+                    for finding in kept
+                    for occurrence in finding.get("occurrences", [])
+                }
+            ),
+        },
+        "depth": depth_report.as_dict(),
         "evidence": {
             "mode": "verified" if verifier.enabled else "skipped",
             "repo_root": verifier.given_root.as_posix() if verifier.given_root else None,
@@ -217,6 +263,7 @@ def build_report(
             "line_window": verifier.line_window,
             "require_evidence": options.require_evidence,
             "strict_lines": options.strict_lines,
+            "require_depth": options.require_depth,
             "by_status": dict(sorted(evidence_counts.items())),
         },
         "scoring_version": scoring.version,
@@ -238,6 +285,32 @@ def build_report(
     return report
 
 
+def _attach_blast_radius(kept: list[dict[str, Any]], tree: TreeIndex) -> None:
+    """Record every place each kept finding's quote appears in the tree.
+
+    The score is unchanged — a defect is still worth its points once. What
+    changes is that the count stops depending on how hard the model looked.
+    """
+    for finding in kept:
+        quotes = [str(finding["quote"]), *finding.pop("_merged_quotes", [])]
+        seen: set[tuple[str, int]] = set()
+        occurrences: list[dict[str, Any]] = []
+        for quote in quotes:
+            for occurrence in tree.find(quote):
+                key = (occurrence.path, occurrence.line)
+                if key in seen:
+                    continue
+                seen.add(key)
+                occurrences.append(occurrence.as_dict())
+        occurrences.sort(key=lambda item: (item["path"], item["line"]))
+        finding["occurrences"] = occurrences
+        finding["occurrence_count"] = len(occurrences)
+        files = {occurrence["path"] for occurrence in occurrences}
+        finding["files_affected"] = len(files)
+        if len(files) > 1:
+            logger.info("{}: quote appears in {} files", finding["id"], len(files))
+
+
 def sha256_of_document(document: Any) -> str:
     """Digest of a payload's canonical JSON form, for the receipt."""
     canonical = json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -246,6 +319,8 @@ def sha256_of_document(document: Any) -> str:
 
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
+    evidence = report["evidence"]
+    statuses = ", ".join(f"{k} {v}" for k, v in evidence["by_status"].items()) or "n/a"
     lines = [
         f"## {report['label']}: **{report['score']}**",
         "",
@@ -253,8 +328,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
         f"- kept {report['kept_count']} · rejected {report['rejected_count']} "
         f"· deduped {report['deduped_count']}",
-        f"- evidence: {report['evidence']['mode']} "
-        f"({', '.join(f'{k} {v}' for k, v in report['evidence']['by_status'].items()) or 'n/a'})",
+        f"- evidence: {evidence['mode']} ({statuses})",
+        f"- depth: {_describe_depth(report['depth'])}",
+        f"- blast radius: {_describe_blast_radius(report['blast_radius'])}",
         f"- scoring `{report['scoring_sha256'][:12]}` · schema `{report['schema_sha256'][:12]}`",
         "",
     ]
@@ -264,13 +340,22 @@ def render_markdown(report: dict[str, Any]) -> str:
             lines.append(f"| `{name}` | {report['count_by_type'][name]} | {points} |")
         lines.append("")
     if report["kept"]:
-        lines += ["### Kept", "", "| type | points | path | title |", "|---|--:|---|---|"]
+        lines += [
+            "### Kept",
+            "",
+            "| type | points | path | files | title |",
+            "|---|--:|---|--:|---|",
+        ]
         for finding in report["kept"]:
-            occurrences = len(finding.get("occurrences", []))
-            suffix = f" (+{occurrences} more)" if occurrences else ""
+            affected = finding.get("files_affected")
+            files = str(affected) if affected is not None else "—"
+            merged = len(finding.get("merged", []))
+            title = finding["title"]
+            if merged:
+                title += f" _(merged {merged} report(s) of the same root cause)_"
             lines.append(
-                f"| `{finding['type']}` | {finding['points']} | `{finding['path']}`{suffix} "
-                f"| {finding['title']} |"
+                f"| `{finding['type']}` | {finding['points']} | `{finding['path']}` "
+                f"| {files} | {title} |"
             )
         lines.append("")
     if report["rejected"]:
@@ -280,6 +365,32 @@ def render_markdown(report: dict[str, Any]) -> str:
             lines.append(f"- `{label}` — {entry['reason']}: {entry['detail']}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _describe_depth(depth: dict[str, Any]) -> str:
+    """One-line summary of the audit-depth check."""
+    status = depth["status"]
+    if status == depth_module.NOT_REQUIRED:
+        return "not required for this review type"
+    if status == depth_module.UNREPORTED:
+        return "**unreported** — no `audit.files_read` block, so depth is unverifiable"
+    detail = (
+        f"{depth['files_read']} file(s) read, {depth['code_files_read']} of them implementation"
+    )
+    if depth.get("coverage") is not None:
+        detail += f" ({depth['coverage']:.0%} of the tree)"
+    if depth["missing_files"]:
+        detail += f"; **{len(depth['missing_files'])} listed file(s) do not exist**"
+    prefix = "**shallow**" if status == depth_module.SHALLOW else "deep"
+    return f"{prefix} — {detail}"
+
+
+def _describe_blast_radius(blast: dict[str, Any]) -> str:
+    """One-line summary of how far the kept findings reach."""
+    if blast["mode"] != "scanned":
+        return "not scanned (`--no-scan`, or no `--repo-root`)"
+    affected = len(blast["files_affected"])
+    return f"{affected} file(s) affected across {blast['tree_files']} scanned"
 
 
 __all__ = [

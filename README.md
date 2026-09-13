@@ -61,11 +61,58 @@ per-runtime wrapper from [`agents/`](agents/) into your skills library
 |-----------|---------------|
 | **Evidence verification** | Findings whose quote is not in the named artifact are rejected before scoring. Hallucinating costs points instead of earning them. |
 | **Content-addressed dedupe** | The key is `(type, canonical file, quote fingerprint)`. `src/a.py:10`, `./src/a.py:11` and `src/a.py` are one finding, not three. |
-| **Cross-path clustering** | One copy-pasted defect in seven files is one finding with seven `occurrences`. |
+| **Cross-path clustering** | One copy-pasted defect in seven files is one finding, not seven. |
+| **Root-cause clustering** | Findings sharing a `cluster` id collapse into one charge even when the wording differs in each place. |
+| **Measured blast radius** | Every verified quote is swept across the tree, so `files_affected` is counted by the scorer, not claimed by the model. |
+| **Audit-depth check** | `audit.files_read` is checked against the tree: a docs-only pass is stamped `shallow`, and a listed file that does not exist earns no credit. |
 | **Full schema enforcement** | Types, enums, `minLength`, and numeric bounds — not just required keys. Cross-checked against `jsonschema` in CI. |
 | **Pinned weights** | `--scoring` needs `--allow-custom-scoring`; weights must be non-negative integers. Every report carries `scoring_sha256` and `schema_sha256`. |
 | **Per-finding rejection** | One malformed finding is rejected on its own; it no longer discards the whole audit. |
 | **Exit codes** | `--fail-over N` exits 1 so a CI job can gate on a score. |
+
+## Counting, clustering, and depth
+
+Three things that stop an audit from being graded on how hard the model looked.
+
+**The count is measured.** Once a quote is verified, the scorer searches the whole
+tree for it and reports every file it lands in. You file the defect once; the
+report says it is in twenty-six files. Filing it twenty-six times earns nothing.
+
+The sweep reads tracked text files once and searches every quote against them:
+about 1.4s over a 2,300-file repository. It skips binaries, anything over 1 MB,
+and the usual noise directories, and stops at 200 occurrences per quote — so a
+very common string is reported as "at least 200", not miscounted.
+
+**A root cause is charged once.** The same defect is often worded differently in
+each place it appears, which defeats quote-based dedupe. Give those findings the
+same `cluster` id and they collapse into one scored finding whose blast radius is
+the union of all their quotes:
+
+```bash
+uv run bs-score examples/findings.blast.json --repo-root examples/fixture-repo --format md
+# one root cause reported three ways → 1 finding, 3 points, 3 files affected
+```
+
+**A shallow audit says so.** A payload can carry what it actually opened:
+
+```json
+"audit": {
+  "files_read": ["README.md", "src/cli.py", "src/api.py"],
+  "notes": "Docs claims plus every module under src/."
+}
+```
+
+For `repo`, `pr`, `branch` and `skill` the scorer stamps the report `shallow`
+when that list holds no implementation file, `unreported` when the block is
+missing, and flags any path in it that does not exist — a claimed read of a
+phantom file is itself a false claim. `--require-depth` turns that into a
+non-zero exit.
+
+```
+- depth: **shallow** — 2 file(s) read, 0 of them implementation (20% of the tree);
+  **1 listed file(s) do not exist**
+- blast radius: 3 file(s) affected across 10 scanned
+```
 
 ## Scoring
 
@@ -102,6 +149,8 @@ has something real to check.
 | `findings.skill.json` | `skill` | **7** | SKILL.md names a script that does not exist; documents the wrong flag |
 | `findings.agent.json` | `agent` | **6** | Phantom skill; "never push" next to "auto-push to main" |
 | `findings.prompt.json` | `prompt` | **18** | Injection surface, a token in the prompt, two self-contradictions, unspecified output |
+| `findings.blast.json` | `repo` | **5** | One root cause reported three ways — merged, then counted across every file it reaches |
+| `findings.shallow.json` | `repo` | **2** | A docs-only pass that also claims to have read a file that does not exist |
 | `findings.hallucinated.json` | `repo` | **0** | Four confident fabrications, all rejected |
 
 ```bash
@@ -111,6 +160,8 @@ uv run bs-score examples/findings.review.json --repo-root examples/fixture-repo 
 uv run bs-score examples/findings.skill.json  --repo-root examples/fixture-repo
 uv run bs-score examples/findings.agent.json  --repo-root examples/fixture-repo
 uv run bs-score examples/findings.prompt.json --repo-root . --sources examples/fixture-prompts
+uv run bs-score examples/findings.blast.json  --repo-root examples/fixture-repo
+uv run bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --require-depth
 uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 ```
 
@@ -146,6 +197,8 @@ bs-score FINDINGS [--repo-root DIR] [--sources PATH ...] [--no-verify]
 | `--no-verify` | Skip verification; the report is stamped `skipped` |
 | `--require-evidence` | Also reject findings that could not be checked at all |
 | `--strict-lines` | Reject a real quote filed at the wrong line |
+| `--no-scan` | Skip the blast-radius sweep (the count is then unreported) |
+| `--require-depth` | Fail when a review type that needs a code pass cannot prove one |
 | `--fail-over N` | Exit 1 when the score exceeds N |
 | `--format md` | Print a Markdown summary instead of JSON |
 
@@ -156,9 +209,11 @@ unusable input.
 
 1. Map the claims the artifact makes.
 2. Deep-read the implementation (required for `repo` / `pr` / `branch` / `skill`).
-3. Cross-check, and quote the evidence **verbatim and contiguously**.
+3. Cross-check, and quote the evidence **verbatim and contiguously**. Sweep each
+   quote across the tree before you decide how many findings there are; give
+   same-cause findings a shared `cluster` id.
 4. Emit findings JSON only — [`findings.schema.json`](findings.schema.json), no
-   `score`, no `points`.
+   `score`, no `points` — with an `audit.files_read` block recording what you read.
 5. `bs-score findings.json --repo-root .`
 6. Report only what the script printed.
 

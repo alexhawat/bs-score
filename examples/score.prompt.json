@@ -1,5 +1,5 @@
 {
-  "bs_score_version": "2.0.0",
+  "bs_score_version": "2.1.0",
   "label": "Bullshit Score",
   "score": 18,
   "verdict": "pass",
@@ -28,9 +28,25 @@
   "kept_count": 5,
   "rejected_count": 0,
   "deduped_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 2,
+    "files_affected": [
+      "reviewer.md",
+      "system.md"
+    ]
+  },
+  "depth": {
+    "status": "not_required",
+    "requires_code_pass": false,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
   "evidence": {
     "mode": "verified",
-    "repo_root": ".",
+    "repo_root": "examples/fixture-prompts",
     "sources": [
       "reviewer",
       "reviewer.md",
@@ -40,13 +56,14 @@
     "line_window": 10,
     "require_evidence": false,
     "strict_lines": false,
+    "require_depth": false,
     "by_status": {
       "verified": 5
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
-  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "scoring_sha256": "1f400e21826bf91d68e06e50e333fb1cc13e624841798c119519d1de654525ea",
+  "schema_sha256": "2af4b7a1475ca72931f9ef55bdfb23bc1827de5cf6e558a700b54dc2768b3103",
   "findings_sha256": "a09376deada4abfd23d705a77dc9d94c1c4c45b97369eb3fcfc7c2b8f772924d",
   "confidence_affects_score": false,
   "kept": [
@@ -65,7 +82,15 @@
         "status": "verified",
         "resolved": "system.md"
       },
-      "points": 5
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "system.md",
+          "line": 6
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "pr-secret-in-prompt",
@@ -82,7 +107,15 @@
         "status": "verified",
         "resolved": "system.md"
       },
-      "points": 5
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "system.md",
+          "line": 8
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "pr-contradiction",
@@ -99,7 +132,15 @@
         "status": "verified",
         "resolved": "system.md"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [
+        {
+          "path": "system.md",
+          "line": 5
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "pr-unspecified-format",
@@ -116,7 +157,15 @@
         "status": "verified",
         "resolved": "system.md"
       },
-      "points": 2
+      "points": 2,
+      "occurrences": [
+        {
+          "path": "system.md",
+          "line": 7
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "pr-reviewer-contradiction",
@@ -133,7 +182,15 @@
         "status": "verified",
         "resolved": "reviewer.md"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [
+        {
+          "path": "reviewer.md",
+          "line": 5
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     }
   ],
   "rejected": [],

@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (one root cause, three wordings)",
+  "audit": {
+    "files_read": [
+      "README.md",
+      "docs/install.md",
+      "docs/quickstart.md",
+      "src/cli.py",
+      "src/api.py",
+      "src/db.py",
+      "src/users.py"
+    ],
+    "notes": "Docs pass plus a read of every module in src/."
+  },
+  "findings": [
+    {
+      "id": "install-readme",
+      "type": "missing_feature",
+      "title": "Docs advertise a `demo install` subcommand the CLI does not define (3 files)",
+      "path": "README.md:15",
+      "quote": "Run `demo install --fast` to set everything up.",
+      "claim": "`demo install` exists; src/cli.py registers only serve and migrate",
+      "cluster": "phantom-install-subcommand",
+      "confidence": 0.95,
+      "target": "readme"
+    },
+    {
+      "id": "install-quickstart",
+      "type": "missing_feature",
+      "title": "Quickstart step 1 calls the same missing subcommand",
+      "path": "docs/quickstart.md:3",
+      "quote": "Start with `demo install`, then run the server.",
+      "claim": "`demo install` exists",
+      "cluster": "phantom-install-subcommand",
+      "confidence": 0.9,
+      "target": "other"
+    },
+    {
+      "id": "install-docs",
+      "type": "missing_feature",
+      "title": "Install page describes the same missing subcommand in prose",
+      "path": "docs/install.md:3",
+      "quote": "The installer subcommand handles dependencies for you.",
+      "claim": "`demo install` exists",
+      "cluster": "phantom-install-subcommand",
+      "confidence": 0.85,
+      "target": "other"
+    },
+    {
+      "id": "cli-proof",
+      "type": "wrong_claim",
+      "title": "CLI registers only serve and migrate",
+      "path": "src/cli.py:9",
+      "quote": "sub.add_parser('serve')",
+      "claim": "The CLI provides the documented install subcommand",
+      "confidence": 0.99,
+      "target": "code"
+    }
+  ]
+}

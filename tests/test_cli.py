@@ -72,7 +72,11 @@ def test_unverifiable_locators_are_kept_by_default_and_dropped_under_require_evi
 
 def test_prompt_sources_make_prompt_quotes_verifiable(capsys):
     prompt = str(EXAMPLES / "findings.prompt.json")
-    _, out = run([prompt, "--sources", str(FIXTURE_PROMPTS), "--require-evidence"], capsys)
+    _, out = run(
+        [prompt, "--repo-root", str(FIXTURE_PROMPTS), "--sources", str(FIXTURE_PROMPTS),
+         "--require-evidence"],
+        capsys,
+    )
     report = json.loads(out)
     assert report["score"] == 18
     assert report["profile"] == "prompt"

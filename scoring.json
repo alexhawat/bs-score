@@ -5,11 +5,38 @@
   "description": "Deterministic Bullshit Score. One score, per-review-type weights. Starts at 0; higher means more bullshit.",
   "default_profile": "repo",
   "confidence_affects_score": false,
-  "evidence_required": ["path", "quote"],
+  "evidence_required": [
+    "path",
+    "quote"
+  ],
   "dedupe": {
     "canonicalize_paths": true,
     "cluster_cross_path": true,
-    "keys": ["type", "file", "quote_fingerprint"]
+    "keys": [
+      "type",
+      "file",
+      "quote_fingerprint"
+    ],
+    "cluster_keys": [
+      "type",
+      "cluster"
+    ]
+  },
+  "depth": {
+    "description": "Review types whose audit is incomplete without reading code. When a payload carries an `audit.files_read` block, bs-score checks it; when it does not, the report says so instead of assuming.",
+    "requires_code_pass": [
+      "repo",
+      "pr",
+      "branch",
+      "skill"
+    ],
+    "doc_suffixes": [
+      ".md",
+      ".rst",
+      ".txt",
+      ".adoc",
+      ".org"
+    ]
   },
   "types": {
     "breaking_bug": "Crash, wrong result, data loss, or a documented workflow that cannot run",

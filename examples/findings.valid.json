@@ -2,6 +2,15 @@
   "version": 1,
   "target_kind": "repo",
   "target_ref": "example/demo",
+  "audit": {
+    "files_read": [
+      "README.md",
+      "src/api.py",
+      "src/db.py",
+      "src/users.py"
+    ],
+    "notes": "Docs claims plus a read of every module under src/."
+  },
   "findings": [
     {
       "id": "f1",

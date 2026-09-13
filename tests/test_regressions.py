@@ -124,7 +124,8 @@ def test_validation_enforces_confidence_range():
 
 
 @pytest.mark.parametrize(
-    "name", ["valid", "review", "skill", "agent", "prompt", "hallucinated", "self"]
+    "name", ["valid", "review", "skill", "agent", "prompt", "hallucinated", "blast",
+     "shallow", "self"]
 )
 def test_every_example_payload_is_schema_valid(name, schema):
     jsonschema = pytest.importorskip("jsonschema")
@@ -162,7 +163,10 @@ def test_one_defect_re_pathed_many_ways_scores_once():
     report = _score(payload, root="examples/fixture-repo")
     assert report["score"] == 3
     assert report["kept_count"] == 1
-    assert len(report["kept"][0]["occurrences"]) == len(spellings) - 1
+    # The other four spellings merge into the survivor...
+    assert len(report["kept"][0]["merged"]) == len(spellings) - 1
+    # ...and the sweep reports the one place the defect actually lives.
+    assert report["kept"][0]["files_affected"] == 1
 
 
 def test_a_copy_pasted_line_in_many_files_is_one_finding():

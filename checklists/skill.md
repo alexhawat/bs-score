@@ -24,11 +24,24 @@ defining skill failure.
    or a used tool it never declares.
 7. **Progressive-disclosure claims** — files referenced for "more detail" that
    do not exist.
+8. **Hollow tests and gates** — a test whose name or docstring promises an
+   execution check while the body asserts a substring, or a CI step that greps
+   for a command instead of running it. `missing_feature`, quoting the promise.
 
 Do not invent missing files: if a referenced path is absent, quote the *reference*
 from the MD and file `missing_feature`.
 
 Use `target: "skill"` for MD quotes and `target: "code"` for script quotes.
+
+## Before you emit
+
+- Sweep each quote across the tree (`rg -n --fixed-strings '<quote>'`). One
+  defect in one file is usually one defect in several.
+- Give same-cause findings a shared `cluster` id.
+- List what you opened in `audit.files_read`. A `skill` audit with no
+  implementation file in that list is stamped **shallow**.
+- Re-read [the shared failure modes](README.md#two-failure-modes-that-apply-to-every-review-type),
+  especially hollow verification.
 
 ## Emit
 

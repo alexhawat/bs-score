@@ -55,10 +55,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --extra dev
-      - name: A fabricated audit must score zero
-        run: |
-          score=$(uv run bs-score examples/findings.hallucinated.json \
-            --repo-root examples/fixture-repo -q | uv run python -c 'import json,sys; print(json.load(sys.stdin)["score"])')
-          test "$score" = "0" || { echo "fabricated audit scored $score"; exit 1; }
-      - name: Score this repository against itself
-        run: uv run bs-score examples/findings.self.json --repo-root . --format md --fail-over 0
+      - name: Run bs_score against itself
+        run: uv run python scripts/check_dogfood.py

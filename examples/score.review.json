@@ -1,5 +1,5 @@
 {
-  "bs_score_version": "2.0.0",
+  "bs_score_version": "2.1.0",
   "label": "Bullshit Score",
   "score": 10,
   "verdict": "pass",
@@ -28,6 +28,21 @@
   "kept_count": 3,
   "rejected_count": 0,
   "deduped_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 10,
+    "files_affected": [
+      "src/api.py"
+    ]
+  },
+  "depth": {
+    "status": "not_required",
+    "requires_code_pass": false,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
   "evidence": {
     "mode": "verified",
     "repo_root": "examples/fixture-repo",
@@ -38,13 +53,14 @@
     "line_window": 10,
     "require_evidence": false,
     "strict_lines": false,
+    "require_depth": false,
     "by_status": {
       "verified": 3
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
-  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "scoring_sha256": "1f400e21826bf91d68e06e50e333fb1cc13e624841798c119519d1de654525ea",
+  "schema_sha256": "2af4b7a1475ca72931f9ef55bdfb23bc1827de5cf6e558a700b54dc2768b3103",
   "findings_sha256": "117f516955d53b5408c720e599264b005727806fcf6bf1d53de74d21368d9288",
   "confidence_affects_score": false,
   "kept": [
@@ -63,7 +79,10 @@
         "status": "verified",
         "resolved": "review:comment:1001"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [],
+      "occurrence_count": 0,
+      "files_affected": 0
     },
     {
       "id": "rv-hollow-verify",
@@ -80,7 +99,10 @@
         "status": "verified",
         "resolved": "review:body"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [],
+      "occurrence_count": 0,
+      "files_affected": 0
     },
     {
       "id": "rv-missed-bug",
@@ -97,7 +119,15 @@
         "status": "verified",
         "resolved": "src/api.py"
       },
-      "points": 4
+      "points": 4,
+      "occurrences": [
+        {
+          "path": "src/api.py",
+          "line": 6
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     }
   ],
   "rejected": [],

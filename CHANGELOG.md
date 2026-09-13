@@ -4,6 +4,51 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-09-13
+
+Stops the score depending on how hard the model looked. Prompted by an audit of
+PR #2 that reported one dead install command as three findings and implied that
+was the inventory — it was in 26 files, across 21 of them the seven runtime
+wrappers people actually install.
+
+### Added
+
+- **Measured blast radius.** Every verified quote is now swept across the tree,
+  and the report says which files carry it (`files_affected`, `occurrences`, and
+  a top-level `blast_radius`). The score is unchanged — a defect is still charged
+  once — but the count is a measurement instead of a claim. `--no-scan` opts out.
+- **Root-cause clustering.** An optional `cluster` id on a finding collapses
+  same-cause findings into one scored finding, even when the wording differs in
+  each place; the cluster's blast radius is the union of its members' quotes.
+  Quote-identical dedupe could never merge those, which is how one root cause
+  scored three times.
+- **Audit-depth checking.** A payload can carry `audit.files_read`. For `repo`,
+  `pr`, `branch` and `skill` the report is stamped `shallow` when that list holds
+  no implementation file and `unreported` when the block is absent; a listed path
+  that does not exist earns no credit and is reported as a phantom read.
+  `--require-depth` turns an insufficient audit into a non-zero exit. The
+  "docs-only is incomplete" rule has been in `SKILL.md` since v1 with nothing
+  enforcing it.
+- `checklists/README.md` documents two failure modes that apply to every review
+  type: **hollow verification** (a verb of proof with nothing behind it — the
+  defect the PR #2 audit caught in this project's own tests) and **counting by
+  hand** (sweep before you file).
+- `examples/findings.blast.json` and `findings.shallow.json`, with the fixture
+  repo extended to carry one root cause worded three ways.
+- `scripts/check_dogfood.py` runs the five claims the README makes, through the
+  real CLI, in CI and in the test suite.
+
+### Changed
+
+- A kept finding's `occurrences` now lists where the scorer *found* the quote
+  (`{path, line}`); reports merged into it by dedupe are listed under `merged`.
+- The `prompt` example scores against `examples/fixture-prompts`, and the
+  self-audit runs with `--no-scan`, so neither receipt changes when the
+  repository gains a file.
+- `test_documented_flags_exist` only inspects fenced code blocks, and only the
+  part of a line after the command name, so a flag invented for bs-score cannot
+  hide beside a real `uvx` or `rg` flag.
+
 ## [2.0.0] - 2026-09-13
 
 The score now measures what the model *proved*, not what it *asserted*.

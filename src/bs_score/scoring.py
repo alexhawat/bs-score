@@ -18,6 +18,8 @@ from loguru import logger
 SCORING_VERSION = 2
 
 DEFAULT_DEDUPE_KEYS = ("type", "file", "quote_fingerprint")
+DEFAULT_CLUSTER_KEYS = ("type", "cluster")
+DEFAULT_DOC_SUFFIXES = (".md", ".rst", ".txt", ".adoc", ".org")
 
 
 class ScoringError(ValueError):
@@ -31,6 +33,20 @@ class DedupeConfig:
     canonicalize_paths: bool = True
     cluster_cross_path: bool = True
     keys: tuple[str, ...] = DEFAULT_DEDUPE_KEYS
+    cluster_keys: tuple[str, ...] = DEFAULT_CLUSTER_KEYS
+
+
+@dataclass(frozen=True)
+class DepthConfig:
+    """Which review types are incomplete without a code pass."""
+
+    requires_code_pass: frozenset[str] = frozenset({"repo", "pr", "branch", "skill"})
+    doc_suffixes: frozenset[str] = frozenset(DEFAULT_DOC_SUFFIXES)
+
+    def is_doc(self, path: str) -> bool:
+        """True when ``path`` looks like prose rather than implementation."""
+        lowered = path.lower()
+        return any(lowered.endswith(suffix) for suffix in self.doc_suffixes)
 
 
 @dataclass(frozen=True)
@@ -59,6 +75,7 @@ class Scoring:
     evidence_required: tuple[str, ...]
     confidence_affects_score: bool
     dedupe: DedupeConfig
+    depth: DepthConfig
     sha256: str
 
     def profile_for(self, target_kind: str | None) -> Profile:
@@ -160,16 +177,40 @@ def load_scoring(document: Any, sha256: str) -> Scoring:
     raw_dedupe = document.get("dedupe") or {}
     if not isinstance(raw_dedupe, dict):
         raise ScoringError("scoring.dedupe must be an object")
+    allowed_keys = {"type", "file", "path", "quote_fingerprint", "target", "cluster"}
     keys = tuple(raw_dedupe.get("keys") or DEFAULT_DEDUPE_KEYS)
-    allowed_keys = {"type", "file", "path", "quote_fingerprint", "target"}
-    unknown = sorted(set(keys) - allowed_keys)
-    if unknown:
-        raise ScoringError(f"scoring.dedupe.keys has unknown key(s): {unknown}")
+    cluster_keys = tuple(raw_dedupe.get("cluster_keys") or DEFAULT_CLUSTER_KEYS)
+    for field, values in (("keys", keys), ("cluster_keys", cluster_keys)):
+        unknown = sorted(set(values) - allowed_keys)
+        if unknown:
+            raise ScoringError(f"scoring.dedupe.{field} has unknown key(s): {unknown}")
+    if "cluster" not in cluster_keys:
+        raise ScoringError("scoring.dedupe.cluster_keys must include 'cluster'")
 
     dedupe = DedupeConfig(
         canonicalize_paths=bool(raw_dedupe.get("canonicalize_paths", True)),
         cluster_cross_path=bool(raw_dedupe.get("cluster_cross_path", True)),
         keys=keys,
+        cluster_keys=cluster_keys,
+    )
+
+    raw_depth = document.get("depth") or {}
+    if not isinstance(raw_depth, dict):
+        raise ScoringError("scoring.depth must be an object")
+    requires = raw_depth.get("requires_code_pass", ["repo", "pr", "branch", "skill"])
+    if not isinstance(requires, list) or not all(isinstance(item, str) for item in requires):
+        raise ScoringError("scoring.depth.requires_code_pass must be a list of review types")
+    unknown_kinds = sorted(set(requires) - set(profiles))
+    if unknown_kinds:
+        raise ScoringError(
+            f"scoring.depth.requires_code_pass names unknown review type(s): {unknown_kinds}"
+        )
+    suffixes = raw_depth.get("doc_suffixes") or list(DEFAULT_DOC_SUFFIXES)
+    if not isinstance(suffixes, list) or not all(isinstance(item, str) for item in suffixes):
+        raise ScoringError("scoring.depth.doc_suffixes must be a list of file suffixes")
+    depth = DepthConfig(
+        requires_code_pass=frozenset(requires),
+        doc_suffixes=frozenset(suffix.lower() for suffix in suffixes),
     )
 
     logger.debug("loaded scoring v{} with profiles {}", SCORING_VERSION, sorted(profiles))
@@ -182,6 +223,7 @@ def load_scoring(document: Any, sha256: str) -> Scoring:
         evidence_required=tuple(evidence_required),
         confidence_affects_score=bool(document.get("confidence_affects_score", False)),
         dedupe=dedupe,
+        depth=depth,
         sha256=sha256,
     )
 
@@ -189,6 +231,7 @@ def load_scoring(document: Any, sha256: str) -> Scoring:
 __all__ = [
     "SCORING_VERSION",
     "DedupeConfig",
+    "DepthConfig",
     "Profile",
     "Scoring",
     "ScoringError",
