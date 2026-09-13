@@ -1,0 +1,169 @@
+{
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 0,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "alexhawat/bs_score@3581e0b (v1 audit, kept as a regression gate)",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
+  "by_type": {},
+  "count_by_type": {},
+  "kept_count": 0,
+  "rejected_count": 8,
+  "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": ".",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "quote_not_found": 8
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "581e72adf08bc6db22e3b83d83cea40f94b4bc5ec77532669436e8108a0c290d",
+  "confidence_affects_score": false,
+  "kept": [],
+  "rejected": [
+    {
+      "index": 0,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in agents/claude/SKILL.md",
+      "id": "bs1",
+      "finding": {
+        "id": "bs1",
+        "type": "breaking_bug",
+        "title": "Wrapper BS_SCORE_ROOT fallback resolves to / — documented scoring command cannot run",
+        "path": "agents/claude/SKILL.md:22",
+        "quote": "export BS_SCORE_ROOT=\"${BS_SCORE_ROOT:-$(cd \"$(dirname \"$0\")/../..\" && pwd)}\"",
+        "claim": "python3 \"$BS_SCORE_ROOT/score.py\" findings.json",
+        "confidence": 0.98,
+        "target": "skill"
+      }
+    },
+    {
+      "index": 1,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in score.py",
+      "id": "bs2",
+      "finding": {
+        "id": "bs2",
+        "type": "wrong_claim",
+        "title": "score.py claims to validate against findings.schema.json but ignores minLength, types and ranges",
+        "path": "score.py:5",
+        "quote": "Validates against findings.schema.json (required fields + enums)",
+        "claim": "Validates against findings.schema.json",
+        "confidence": 0.95,
+        "target": "code"
+      }
+    },
+    {
+      "index": 2,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in examples/findings.valid.json",
+      "id": "bs3",
+      "finding": {
+        "id": "bs3",
+        "type": "bug",
+        "title": "examples/findings.valid.json is invalid against findings.schema.json (empty path/quote violate minLength 1)",
+        "path": "examples/findings.valid.json:66",
+        "quote": "\"path\": \"\",",
+        "confidence": 0.99,
+        "target": "code"
+      }
+    },
+    {
+      "index": 3,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in score.py",
+      "id": "bs4",
+      "finding": {
+        "id": "bs4",
+        "type": "bug",
+        "title": "Dedupe key is raw path text: same defect scores N times via line-number, ./ prefix or case variants",
+        "path": "score.py:96",
+        "quote": "return path.strip().replace(\"\\\\\", \"/\")",
+        "claim": "Dedupe key: (type, path) - first kept, later dropped as deduped.",
+        "confidence": 0.95,
+        "target": "code"
+      }
+    },
+    {
+      "index": 4,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in score.py",
+      "id": "bs5",
+      "finding": {
+        "id": "bs5",
+        "type": "bug",
+        "title": "Malformed scoring.json raises an uncaught KeyError/TypeError instead of a clean exit 2",
+        "path": "score.py:181",
+        "quote": "points = int(types[finding_type][\"points\"])",
+        "confidence": 0.9,
+        "target": "code"
+      }
+    },
+    {
+      "index": 5,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in score.py",
+      "id": "bs6",
+      "finding": {
+        "id": "bs6",
+        "type": "wrong_claim",
+        "title": "\"Locked\" weights were swappable: --scoring took any file, including negative points",
+        "path": "score.py:221",
+        "quote": "default=DEFAULT_SCORING,",
+        "claim": "Score rules (locked): start at 0, unbounded sum, higher = worse",
+        "confidence": 0.9,
+        "target": "code"
+      }
+    },
+    {
+      "index": 6,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in score.py",
+      "id": "bs7",
+      "finding": {
+        "id": "bs7",
+        "type": "bug",
+        "title": "One malformed finding aborts the whole report; documented per-finding rejection is unreachable with the shipped scoring.json",
+        "path": "score.py:144",
+        "quote": "\"reason\": \"unknown_type\",",
+        "claim": "Missing -> rejected, not scored.",
+        "confidence": 0.85,
+        "target": "code"
+      }
+    },
+    {
+      "index": 7,
+      "reason": "unverified_evidence",
+      "detail": "quote_not_found: quote is not present in findings.schema.json",
+      "id": "bs8",
+      "finding": {
+        "id": "bs8",
+        "type": "wrong_claim",
+        "title": "Schema $id points at the old bots-agents-skills repo, not the canonical bs_score repo",
+        "path": "findings.schema.json:3",
+        "quote": "https://github.com/alexhawat/bots-agents-skills/skills/bs_score/findings.schema.json",
+        "claim": "Canonical publish: alexhawat/bs_score (this repo).",
+        "confidence": 0.9,
+        "target": "code"
+      }
+    }
+  ],
+  "deduped": []
+}

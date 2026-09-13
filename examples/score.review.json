@@ -1,14 +1,52 @@
 {
-  "version": 1,
-  "score": 8,
-  "by_type": {
-    "bug": 3,
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 10,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "review",
+  "target_ref": "alexhawat/mergeCraft#42 review:99",
+  "profile": "review",
+  "profile_description": "Grading a PR review. A reviewer's currency is claims, so false claims and hollow verification dominate; a real defect the review missed costs more than a mislabelled one.",
+  "weights": {
+    "breaking_bug": 6,
+    "bug": 4,
     "missing_feature": 3,
-    "wrong_claim": 2
+    "security_issue": 5,
+    "wrong_claim": 3
+  },
+  "by_type": {
+    "bug": 4,
+    "missing_feature": 3,
+    "wrong_claim": 3
+  },
+  "count_by_type": {
+    "bug": 1,
+    "missing_feature": 1,
+    "wrong_claim": 1
   },
   "kept_count": 3,
   "rejected_count": 0,
   "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [
+      "review:body",
+      "review:comment:1001"
+    ],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 3
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "117f516955d53b5408c720e599264b005727806fcf6bf1d53de74d21368d9288",
+  "confidence_affects_score": false,
   "kept": [
     {
       "id": "rv-false-npe",
@@ -19,7 +57,13 @@
       "claim": "config can be None at src/cli.py:88",
       "confidence": 0.9,
       "target": "review",
-      "points": 2
+      "canonical_file": "review:comment:1001",
+      "quote_fingerprint": "7d8b9b15edb50f77",
+      "evidence": {
+        "status": "verified",
+        "resolved": "review:comment:1001"
+      },
+      "points": 3
     },
     {
       "id": "rv-hollow-verify",
@@ -30,24 +74,32 @@
       "claim": "Review performed a secrets scan of the PR",
       "confidence": 0.8,
       "target": "review",
+      "canonical_file": "review:body",
+      "quote_fingerprint": "e21b476a628cb9fb",
+      "evidence": {
+        "status": "verified",
+        "resolved": "review:body"
+      },
       "points": 3
     },
     {
       "id": "rv-missed-bug",
       "type": "bug",
       "title": "Review missed off-by-one in pagination changed in the PR",
-      "path": "src/api.py:88",
+      "path": "src/api.py:6",
       "quote": "page = int(params.get('page', 1)) - 1 if page else 0",
       "claim": "Review should have caught pagination off-by-one in the diff",
       "confidence": 0.85,
       "target": "diff",
-      "points": 3
+      "canonical_file": "src/api.py",
+      "quote_fingerprint": "cea2d835e624e20a",
+      "evidence": {
+        "status": "verified",
+        "resolved": "src/api.py"
+      },
+      "points": 4
     }
   ],
   "rejected": [],
-  "deduped": [],
-  "target_kind": "review",
-  "target_ref": "alexhawat/mergeCraft#42 review:99",
-  "scoring_version": 1,
-  "confidence_affects_score": false
+  "deduped": []
 }

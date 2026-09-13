@@ -1,97 +1,68 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/alexhawat/bots-agents-skills/skills/bs_score/findings.schema.json",
+  "$id": "https://github.com/alexhawat/bs_score/blob/main/findings.schema.json",
   "title": "BsScoreFindings",
+  "description": "Contract for LLM-emitted bs_score findings. bs-score enforces this schema in full (types, enums, minLength, numeric bounds, additionalProperties) before scoring.",
   "type": "object",
-  "required": [
-    "version",
-    "target_kind",
-    "findings"
-  ],
+  "required": ["version", "target_kind", "findings"],
   "additionalProperties": false,
   "properties": {
     "version": {
       "type": "integer",
-      "const": 1
+      "enum": [1, 2],
+      "description": "Payload contract version. 2 is current; 1 is still accepted."
     },
     "target_kind": {
       "type": "string",
-      "enum": [
-        "repo",
-        "pr",
-        "branch",
-        "review",
-        "skill",
-        "agent"
-      ]
+      "enum": ["repo", "pr", "branch", "review", "skill", "agent", "prompt"],
+      "description": "Review type. Selects the weight profile in scoring.json."
     },
     "target_ref": {
       "type": "string",
-      "description": "Optional locator: repo URL, PR/branch, review id, skill path (e.g. skills/foo or .cursor/skills/bar), or agent path (e.g. .cursor/agents/x.md, .claude/agents/y.md)"
+      "minLength": 1,
+      "description": "Optional locator: repo URL or commit, PR/branch, review id, skill path, agent path, or prompt-set name."
     },
     "findings": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "type",
-          "title",
-          "path",
-          "quote",
-          "target"
-        ],
+        "required": ["id", "type", "title", "path", "quote", "target"],
         "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Unique within the payload."
           },
           "type": {
             "type": "string",
-            "enum": [
-              "breaking_bug",
-              "security_issue",
-              "missing_feature",
-              "wrong_claim",
-              "bug"
-            ]
+            "enum": ["breaking_bug", "security_issue", "missing_feature", "bug", "wrong_claim"]
           },
-          "title": {
-            "type": "string",
-            "minLength": 1
-          },
+          "title": { "type": "string", "minLength": 1 },
           "path": {
             "type": "string",
             "minLength": 1,
-            "description": "Repo-relative path to evidence: README.md, file.py:42, diff hunk, review locator (review:body, pull/<n>/reviews/<id>[#suffix]), skill MD/script (skills/foo/SKILL.md:12), or agent config (.cursor/agents/x.md, .claude/agents/y.md, AGENTS.md)"
+            "description": "Evidence locator. File form: README.md, src/api.py:88, src/api.py:88-95. Review form: pull/<n>/reviews/<id>[#suffix]. Prompt form: prompt:<prompt-id>[:<line>] resolved against --prompts, or a plain file path when the prompt is stored in the repo."
           },
           "quote": {
             "type": "string",
             "minLength": 1,
-            "description": "Short verbatim excerpt from claim or code"
+            "description": "Verbatim excerpt from the artifact at `path`. Verified byte-for-byte (whitespace-normalised) by bs-score --repo-root; a quote that is not present is not scored."
           },
           "claim": {
             "type": "string",
-            "description": "Optional stated claim being audited"
+            "minLength": 1,
+            "description": "Optional: the stated claim being audited."
           },
           "confidence": {
             "type": "number",
             "minimum": 0,
             "maximum": 1,
-            "description": "Display-only; does not affect score"
+            "description": "Display-only; does not affect the score."
           },
           "target": {
             "type": "string",
-            "enum": [
-              "readme",
-              "code",
-              "diff",
-              "review",
-              "skill",
-              "agent",
-              "other"
-            ]
+            "enum": ["readme", "code", "diff", "review", "skill", "agent", "prompt", "other"]
           }
         }
       }

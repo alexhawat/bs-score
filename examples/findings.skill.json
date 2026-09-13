@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "target_kind": "skill",
   "target_ref": "skills/demo-deploy",
   "findings": [
@@ -7,7 +7,7 @@
       "id": "sk-missing-script",
       "type": "missing_feature",
       "title": "SKILL.md tells agent to run deploy.sh; file absent",
-      "path": "skills/demo-deploy/SKILL.md:22",
+      "path": "skills/demo-deploy/SKILL.md:13",
       "quote": "Run `bash scripts/deploy.sh --prod` then paste the URL.",
       "claim": "scripts/deploy.sh exists and performs production deploy",
       "confidence": 0.95,
@@ -17,7 +17,7 @@
       "id": "sk-wrong-flag",
       "type": "wrong_claim",
       "title": "SKILL.md says --prod; script only accepts --environment",
-      "path": "skills/demo-deploy/scripts/run.py:40",
+      "path": "skills/demo-deploy/scripts/run.py:8",
       "quote": "parser.add_argument('--environment', required=True)",
       "claim": "CLI flag is --prod as documented in SKILL.md",
       "confidence": 0.9,

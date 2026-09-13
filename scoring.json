@@ -1,37 +1,105 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "bs_score",
-  "description": "Deterministic Bullshit Score (tag bs_score) from LLM findings. Starts at 0; higher means more bullshit.",
-  "dedupe_keys": [
-    "type",
-    "path"
-  ],
+  "label": "Bullshit Score",
+  "description": "Deterministic Bullshit Score. One score, per-review-type weights. Starts at 0; higher means more bullshit.",
+  "default_profile": "repo",
   "confidence_affects_score": false,
-  "evidence_required": [
-    "path",
-    "quote"
-  ],
-  "types": {
-    "breaking_bug": {
-      "points": 5,
-      "description": "Crash, wrong result, or data loss"
-    },
-    "security_issue": {
-      "points": 4,
-      "description": "Auth, injection, secrets, or privilege issues"
-    },
-    "missing_feature": {
-      "points": 3,
-      "description": "Claimed in docs/README but not implemented"
-    },
-    "wrong_claim": {
-      "points": 2,
-      "description": "README/docs claim contradicted by code"
-    },
-    "bug": {
-      "points": 3,
-      "description": "Incorrect behavior that is not catastrophic"
-    }
+  "evidence_required": ["path", "quote"],
+  "dedupe": {
+    "canonicalize_paths": true,
+    "cluster_cross_path": true,
+    "keys": ["type", "file", "quote_fingerprint"]
   },
-  "label": "Bullshit Score"
+  "types": {
+    "breaking_bug": "Crash, wrong result, data loss, or a documented workflow that cannot run",
+    "security_issue": "Auth, injection, secrets, privilege, or unsafe-instruction issue",
+    "missing_feature": "Capability asserted by docs/skill/agent/prompt with no implementation",
+    "bug": "Incorrect behaviour that is not catastrophic",
+    "wrong_claim": "A stated claim contradicted by the artifact it describes"
+  },
+  "profiles": {
+    "repo": {
+      "description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+      "weights": {
+        "breaking_bug": 5,
+        "security_issue": 4,
+        "missing_feature": 3,
+        "bug": 3,
+        "wrong_claim": 2
+      }
+    },
+    "pr": {
+      "description": "Pre-merge gate. Defects about to land outweigh documentation drift.",
+      "weights": {
+        "breaking_bug": 6,
+        "security_issue": 5,
+        "missing_feature": 2,
+        "bug": 3,
+        "wrong_claim": 2
+      }
+    },
+    "branch": {
+      "description": "Same as pr; the diff is the unit of review.",
+      "weights": {
+        "breaking_bug": 6,
+        "security_issue": 5,
+        "missing_feature": 2,
+        "bug": 3,
+        "wrong_claim": 2
+      }
+    },
+    "review": {
+      "description": "Grading a PR review. A reviewer's currency is claims, so false claims and hollow verification dominate; a real defect the review missed costs more than a mislabelled one.",
+      "weights": {
+        "breaking_bug": 6,
+        "security_issue": 5,
+        "missing_feature": 3,
+        "bug": 4,
+        "wrong_claim": 3
+      },
+      "type_notes": {
+        "missing_feature": "Verification claimed but never performed (hollow 'verified: no secrets')",
+        "bug": "A real defect present in the diff that the review did not report",
+        "wrong_claim": "A review assertion contradicted by the diff or code"
+      }
+    },
+    "skill": {
+      "description": "Skill pack hygiene: SKILL.md against the scripts and helpers it names. Advertising a capability with no implementation is the defining skill failure.",
+      "weights": {
+        "breaking_bug": 5,
+        "security_issue": 4,
+        "missing_feature": 4,
+        "bug": 3,
+        "wrong_claim": 3
+      }
+    },
+    "agent": {
+      "description": "Agent/persona config hygiene. A config that instructs unsafe behaviour is the highest-stakes failure; phantom tools and internal contradictions follow.",
+      "weights": {
+        "breaking_bug": 4,
+        "security_issue": 5,
+        "missing_feature": 3,
+        "bug": 2,
+        "wrong_claim": 3
+      }
+    },
+    "prompt": {
+      "description": "One or more prompts (system/developer/tool/persona). Injection surface and secret handling dominate; contradictions and unsupported guarantees are the common defects.",
+      "weights": {
+        "breaking_bug": 4,
+        "security_issue": 5,
+        "missing_feature": 2,
+        "bug": 3,
+        "wrong_claim": 3
+      },
+      "type_notes": {
+        "breaking_bug": "An instruction that makes the prompt's own stated workflow impossible to follow",
+        "security_issue": "Treats untrusted content as instructions, leaks secrets, or disables a safety gate",
+        "missing_feature": "Promises an output, format, or tool the prompt never specifies how to produce",
+        "bug": "Instruction that reliably produces wrong behaviour (ambiguous precedence, wrong default)",
+        "wrong_claim": "Self-contradiction, or a guarantee the prompt cannot enforce"
+      }
+    }
+  }
 }

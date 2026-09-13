@@ -1,40 +1,81 @@
 {
-  "version": 1,
-  "score": 4,
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 6,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "agent",
+  "target_ref": ".cursor/agents/shipper.md",
+  "profile": "agent",
+  "profile_description": "Agent/persona config hygiene. A config that instructs unsafe behaviour is the highest-stakes failure; phantom tools and internal contradictions follow.",
+  "weights": {
+    "breaking_bug": 4,
+    "bug": 2,
+    "missing_feature": 3,
+    "security_issue": 5,
+    "wrong_claim": 3
+  },
   "by_type": {
-    "wrong_claim": 4
+    "wrong_claim": 6
+  },
+  "count_by_type": {
+    "wrong_claim": 2
   },
   "kept_count": 2,
   "rejected_count": 0,
   "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 2
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "ce7d87e66bc04e448afb4318db5075bae71c15ec97ff1fed0092016e1722476b",
+  "confidence_affects_score": false,
   "kept": [
     {
       "id": "ag-phantom-skill",
       "type": "wrong_claim",
       "title": "Agent claims @deploy-prod skill; path not in workspace",
-      "path": ".cursor/agents/shipper.md:18",
+      "path": ".cursor/agents/shipper.md:7",
       "quote": "Always run @deploy-prod before merging.",
       "claim": "deploy-prod skill is installed and invocable",
       "confidence": 0.92,
       "target": "agent",
-      "points": 2
+      "canonical_file": ".cursor/agents/shipper.md",
+      "quote_fingerprint": "4db7ee7184bd489a",
+      "evidence": {
+        "status": "verified",
+        "resolved": ".cursor/agents/shipper.md"
+      },
+      "points": 3
     },
     {
       "id": "ag-contradict-push",
       "type": "wrong_claim",
       "title": "Same agent forbids push then requires auto-push",
-      "path": ".cursor/agents/shipper.md#push-policy",
-      "quote": "Never push.\\n...\\nAuto-push to main after green CI.",
-      "claim": "Push policy is consistent",
+      "path": ".cursor/agents/shipper.md:12#push-policy",
+      "quote": "Auto-push to main after green CI.",
+      "claim": "Push policy is consistent; the same file also says 'Never push.'",
       "confidence": 0.85,
       "target": "agent",
-      "points": 2
+      "canonical_file": ".cursor/agents/shipper.md",
+      "quote_fingerprint": "8ab7a51033608ff7",
+      "evidence": {
+        "status": "verified",
+        "resolved": ".cursor/agents/shipper.md"
+      },
+      "points": 3
     }
   ],
   "rejected": [],
-  "deduped": [],
-  "target_kind": "agent",
-  "target_ref": ".cursor/agents/shipper.md",
-  "scoring_version": 1,
-  "confidence_affects_score": false
+  "deduped": []
 }

@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bs-score"
+version = "2.0.0"
+description = "Bullshit Score: an LLM finds defects with evidence; bs-score verifies the evidence and scores it deterministically."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Alex Hawat" }]
+requires-python = ">=3.10"
+keywords = ["llm", "eval", "audit", "code-review", "agent", "skill", "prompt"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = ["loguru>=0.7.2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff>=0.6"]
+
+[project.scripts]
+bs-score = "bs_score.cli:run"
+
+[project.urls]
+Homepage = "https://github.com/alexhawat/bs_score"
+Source = "https://github.com/alexhawat/bs_score"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bs_score"]
+
+# The repo-root scoring.json / findings.schema.json stay canonical (docs quote those
+# paths); the wheel carries a copy so an installed bs-score is self-contained.
+[tool.hatch.build.targets.wheel.force-include]
+"scoring.json" = "bs_score/data/scoring.json"
+"findings.schema.json" = "bs_score/data/findings.schema.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "agents", "*.json", "*.md", "*.py", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# examples/fixture-repo holds deliberately broken code for the examples to quote.
+extend-exclude = ["examples/fixture-repo"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

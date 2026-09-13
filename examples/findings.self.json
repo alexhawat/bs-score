@@ -1,0 +1,85 @@
+{
+  "version": 2,
+  "target_kind": "repo",
+  "target_ref": "alexhawat/bs_score@3581e0b (v1 audit, kept as a regression gate)",
+  "findings": [
+    {
+      "id": "bs1",
+      "type": "breaking_bug",
+      "title": "Wrapper BS_SCORE_ROOT fallback resolves to / \u2014 documented scoring command cannot run",
+      "path": "agents/claude/SKILL.md:22",
+      "quote": "export BS_SCORE_ROOT=\"${BS_SCORE_ROOT:-$(cd \"$(dirname \"$0\")/../..\" && pwd)}\"",
+      "claim": "python3 \"$BS_SCORE_ROOT/score.py\" findings.json",
+      "confidence": 0.98,
+      "target": "skill"
+    },
+    {
+      "id": "bs2",
+      "type": "wrong_claim",
+      "title": "score.py claims to validate against findings.schema.json but ignores minLength, types and ranges",
+      "path": "score.py:5",
+      "quote": "Validates against findings.schema.json (required fields + enums)",
+      "claim": "Validates against findings.schema.json",
+      "confidence": 0.95,
+      "target": "code"
+    },
+    {
+      "id": "bs3",
+      "type": "bug",
+      "title": "examples/findings.valid.json is invalid against findings.schema.json (empty path/quote violate minLength 1)",
+      "path": "examples/findings.valid.json:66",
+      "quote": "\"path\": \"\",",
+      "confidence": 0.99,
+      "target": "code"
+    },
+    {
+      "id": "bs4",
+      "type": "bug",
+      "title": "Dedupe key is raw path text: same defect scores N times via line-number, ./ prefix or case variants",
+      "path": "score.py:96",
+      "quote": "return path.strip().replace(\"\\\\\", \"/\")",
+      "claim": "Dedupe key: (type, path) - first kept, later dropped as deduped.",
+      "confidence": 0.95,
+      "target": "code"
+    },
+    {
+      "id": "bs5",
+      "type": "bug",
+      "title": "Malformed scoring.json raises an uncaught KeyError/TypeError instead of a clean exit 2",
+      "path": "score.py:181",
+      "quote": "points = int(types[finding_type][\"points\"])",
+      "confidence": 0.9,
+      "target": "code"
+    },
+    {
+      "id": "bs6",
+      "type": "wrong_claim",
+      "title": "\"Locked\" weights were swappable: --scoring took any file, including negative points",
+      "path": "score.py:221",
+      "quote": "default=DEFAULT_SCORING,",
+      "claim": "Score rules (locked): start at 0, unbounded sum, higher = worse",
+      "confidence": 0.9,
+      "target": "code"
+    },
+    {
+      "id": "bs7",
+      "type": "bug",
+      "title": "One malformed finding aborts the whole report; documented per-finding rejection is unreachable with the shipped scoring.json",
+      "path": "score.py:144",
+      "quote": "\"reason\": \"unknown_type\",",
+      "claim": "Missing -> rejected, not scored.",
+      "confidence": 0.85,
+      "target": "code"
+    },
+    {
+      "id": "bs8",
+      "type": "wrong_claim",
+      "title": "Schema $id points at the old bots-agents-skills repo, not the canonical bs_score repo",
+      "path": "findings.schema.json:3",
+      "quote": "https://github.com/alexhawat/bots-agents-skills/skills/bs_score/findings.schema.json",
+      "claim": "Canonical publish: alexhawat/bs_score (this repo).",
+      "confidence": 0.9,
+      "target": "code"
+    }
+  ]
+}

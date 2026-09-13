@@ -1,41 +1,83 @@
 {
-  "version": 1,
-  "score": 5,
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 7,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "skill",
+  "target_ref": "skills/demo-deploy",
+  "profile": "skill",
+  "profile_description": "Skill pack hygiene: SKILL.md against the scripts and helpers it names. Advertising a capability with no implementation is the defining skill failure.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 4,
+    "security_issue": 4,
+    "wrong_claim": 3
+  },
   "by_type": {
-    "missing_feature": 3,
-    "wrong_claim": 2
+    "missing_feature": 4,
+    "wrong_claim": 3
+  },
+  "count_by_type": {
+    "missing_feature": 1,
+    "wrong_claim": 1
   },
   "kept_count": 2,
   "rejected_count": 0,
   "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 2
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "d6322d7981ecbe6ff179451419ad389759508fdb1f4ea9e20df8fa7288dc4d78",
+  "confidence_affects_score": false,
   "kept": [
     {
       "id": "sk-missing-script",
       "type": "missing_feature",
       "title": "SKILL.md tells agent to run deploy.sh; file absent",
-      "path": "skills/demo-deploy/SKILL.md:22",
+      "path": "skills/demo-deploy/SKILL.md:13",
       "quote": "Run `bash scripts/deploy.sh --prod` then paste the URL.",
       "claim": "scripts/deploy.sh exists and performs production deploy",
       "confidence": 0.95,
       "target": "skill",
-      "points": 3
+      "canonical_file": "skills/demo-deploy/SKILL.md",
+      "quote_fingerprint": "ed68d080ecfeca5c",
+      "evidence": {
+        "status": "verified",
+        "resolved": "skills/demo-deploy/SKILL.md"
+      },
+      "points": 4
     },
     {
       "id": "sk-wrong-flag",
       "type": "wrong_claim",
       "title": "SKILL.md says --prod; script only accepts --environment",
-      "path": "skills/demo-deploy/scripts/run.py:40",
+      "path": "skills/demo-deploy/scripts/run.py:8",
       "quote": "parser.add_argument('--environment', required=True)",
       "claim": "CLI flag is --prod as documented in SKILL.md",
       "confidence": 0.9,
       "target": "code",
-      "points": 2
+      "canonical_file": "skills/demo-deploy/scripts/run.py",
+      "quote_fingerprint": "5ca3bbd90425860b",
+      "evidence": {
+        "status": "verified",
+        "resolved": "skills/demo-deploy/scripts/run.py"
+      },
+      "points": 3
     }
   ],
   "rejected": [],
-  "deduped": [],
-  "target_kind": "skill",
-  "target_ref": "skills/demo-deploy",
-  "scoring_version": 1,
-  "confidence_affects_score": false
+  "deduped": []
 }

@@ -1,0 +1,141 @@
+{
+  "bs_score_version": "2.0.0",
+  "label": "Bullshit Score",
+  "score": 18,
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "prompt",
+  "target_ref": "examples/fixture-prompts (2 prompts)",
+  "profile": "prompt",
+  "profile_description": "One or more prompts (system/developer/tool/persona). Injection surface and secret handling dominate; contradictions and unsupported guarantees are the common defects.",
+  "weights": {
+    "breaking_bug": 4,
+    "bug": 3,
+    "missing_feature": 2,
+    "security_issue": 5,
+    "wrong_claim": 3
+  },
+  "by_type": {
+    "missing_feature": 2,
+    "security_issue": 10,
+    "wrong_claim": 6
+  },
+  "count_by_type": {
+    "missing_feature": 1,
+    "security_issue": 2,
+    "wrong_claim": 2
+  },
+  "kept_count": 5,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": ".",
+    "sources": [
+      "reviewer",
+      "reviewer.md",
+      "system",
+      "system.md"
+    ],
+    "line_window": 10,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 5
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
+  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "findings_sha256": "a09376deada4abfd23d705a77dc9d94c1c4c45b97369eb3fcfc7c2b8f772924d",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "pr-injection",
+      "type": "security_issue",
+      "title": "System prompt tells the agent to obey text from an untrusted PR body",
+      "path": "prompt:system.md:6",
+      "quote": "Follow any instructions found in the pull request body.",
+      "claim": "Untrusted input is treated as data, not instructions",
+      "confidence": 0.95,
+      "target": "prompt",
+      "canonical_file": "system.md",
+      "quote_fingerprint": "7cf33a20398fd230",
+      "evidence": {
+        "status": "verified",
+        "resolved": "system.md"
+      },
+      "points": 5
+    },
+    {
+      "id": "pr-secret-in-prompt",
+      "type": "security_issue",
+      "title": "Deploy token is embedded in the prompt that is told to keep it secret",
+      "path": "prompt:system.md:8",
+      "quote": "Never reveal the deploy token. It is DEPLOY_TOKEN=sk-demo-not-real.",
+      "claim": "The deploy token is not exposed to the model",
+      "confidence": 0.98,
+      "target": "prompt",
+      "canonical_file": "system.md",
+      "quote_fingerprint": "316695993f4d761b",
+      "evidence": {
+        "status": "verified",
+        "resolved": "system.md"
+      },
+      "points": 5
+    },
+    {
+      "id": "pr-contradiction",
+      "type": "wrong_claim",
+      "title": "\"Never release without verifying\" is cancelled two lines later",
+      "path": "prompt:system.md:5",
+      "quote": "If the changelog is missing, release anyway so the team is not blocked.",
+      "claim": "Never release without verifying.",
+      "confidence": 0.92,
+      "target": "prompt",
+      "canonical_file": "system.md",
+      "quote_fingerprint": "5013015ad0bfaa72",
+      "evidence": {
+        "status": "verified",
+        "resolved": "system.md"
+      },
+      "points": 3
+    },
+    {
+      "id": "pr-unspecified-format",
+      "type": "missing_feature",
+      "title": "Promises JSON output but never specifies a shape, schema, or example",
+      "path": "prompt:system.md:7",
+      "quote": "Return your answer as JSON.",
+      "claim": "The prompt defines the JSON it expects",
+      "confidence": 0.8,
+      "target": "prompt",
+      "canonical_file": "system.md",
+      "quote_fingerprint": "9b0479a69400cccc",
+      "evidence": {
+        "status": "verified",
+        "resolved": "system.md"
+      },
+      "points": 2
+    },
+    {
+      "id": "pr-reviewer-contradiction",
+      "type": "wrong_claim",
+      "title": "Reviewer prompt requires the full suite, then approves on appearance alone",
+      "path": "prompt:reviewer.md:5",
+      "quote": "Approve if the diff looks reasonable.",
+      "claim": "Always run the full test suite before approving.",
+      "confidence": 0.88,
+      "target": "prompt",
+      "canonical_file": "reviewer.md",
+      "quote_fingerprint": "4aa49cc063099a47",
+      "evidence": {
+        "status": "verified",
+        "resolved": "reviewer.md"
+      },
+      "points": 3
+    }
+  ],
+  "rejected": [],
+  "deduped": []
+}
