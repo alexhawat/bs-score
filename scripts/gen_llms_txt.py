@@ -30,7 +30,7 @@ from bs_score.cli import build_claims_parser, build_parser  # noqa: E402
 RAW = "https://raw.githubusercontent.com/alexhawat/bs_score/main"
 
 PITCH = (
-    "Your AI auditor lies. bs_score catches it — every claim is quoted, every "
+    "Your AI auditor lies. bs-score catches it — every claim is quoted, every "
     "quote is verified, and the score comes from code, not prose. The LLM finds "
     "defects and quotes the evidence; the bs-score CLI verifies every quote "
     "against the artifact it names, then scores what survived. Higher = more "
@@ -92,7 +92,7 @@ def cli_flags() -> str:
 
 
 def render_llms_txt() -> str:
-    return f"""# bs_score
+    return f"""# bs-score
 
 > {PITCH}
 
@@ -129,7 +129,7 @@ def render_llms_full() -> str:
     skill = (REPO / "SKILL.md").read_text(encoding="utf-8")
     scoring = json.loads((REPO / "scoring.json").read_text(encoding="utf-8"))
     schema = json.loads((REPO / "findings.schema.json").read_text(encoding="utf-8"))
-    return f"""# bs_score — full context for agents
+    return f"""# bs-score — full context for agents
 
 {PITCH}
 

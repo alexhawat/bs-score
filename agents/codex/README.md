@@ -1,12 +1,12 @@
-# bs_score — Codex
+# bs-score — Codex
 
 Wrapper for **Codex**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.codex/skills/bs_score` (personal) or `.agents/skills/bs_score` (project). Codex also reads `~/.agents/skills/`.
+Skills folder: `~/.codex/skills/bs-score` (personal) or `.agents/skills/bs-score` (project). Codex also reads `~/.agents/skills/`.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.codex/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.codex/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

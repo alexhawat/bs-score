@@ -1,6 +1,6 @@
-name: bs_score
+name: bs-score
 description: >-
-  Verify and score bs_score findings deterministically. Every quoted claim is
+  Verify and score bs-score findings deterministically. Every quoted claim is
   checked against the artifact it names; only verified findings score.
 author: alexhawat
 branding:

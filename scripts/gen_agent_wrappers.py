@@ -22,60 +22,60 @@ AGENTS = REPO / "agents"
 RUNTIMES: dict[str, dict[str, str]] = {
     "claude": {
         "title": "Claude Code",
-        "personal": "~/.claude/skills/bs_score",
-        "project": ".claude/skills/bs_score",
+        "personal": "~/.claude/skills/bs-score",
+        "project": ".claude/skills/bs-score",
         "note": "",
     },
     "codex": {
         "title": "Codex",
-        "personal": "~/.codex/skills/bs_score",
-        "project": ".agents/skills/bs_score",
+        "personal": "~/.codex/skills/bs-score",
+        "project": ".agents/skills/bs-score",
         "note": "Codex also reads `~/.agents/skills/`.",
     },
     "cursor": {
         "title": "Cursor",
-        "personal": "~/.cursor/skills/bs_score",
-        "project": ".cursor/skills/bs_score",
+        "personal": "~/.cursor/skills/bs-score",
+        "project": ".cursor/skills/bs-score",
         "note": "Cursor also reads `.agents/skills/` inside the repository.",
     },
     "grok": {
         "title": "Grok Build",
-        "personal": "~/.grok/skills/bs_score",
-        "project": ".grok/skills/bs_score",
+        "personal": "~/.grok/skills/bs-score",
+        "project": ".grok/skills/bs-score",
         "note": "Grok Build also reads `.claude/skills/` and `.agents/skills/`.",
     },
     "hermes": {
         "title": "Hermes",
-        "personal": "~/.hermes/skills/bs_score",
-        "project": "skills/bs_score",
+        "personal": "~/.hermes/skills/bs-score",
+        "project": "skills/bs-score",
         "note": "The skills directory is configurable; `~/.hermes/skills/` is the default.",
     },
     "openclaw": {
         "title": "OpenClaw",
-        "personal": "~/.openclaw/skills/bs_score",
-        "project": "<workspace>/skills/bs_score",
+        "personal": "~/.openclaw/skills/bs-score",
+        "project": "<workspace>/skills/bs-score",
         "note": "OpenClaw also reads `.agents/skills/` and `~/.agents/skills/`.",
     },
     "opencode": {
         "title": "OpenCode",
-        "personal": "~/.config/opencode/skills/bs_score",
-        "project": ".opencode/skills/bs_score",
+        "personal": "~/.config/opencode/skills/bs-score",
+        "project": ".opencode/skills/bs-score",
         "note": "OpenCode also reads `.claude/skills/` and `.agents/skills/`.",
     },
 }
 
 SKILL_TEMPLATE = """---
-name: bs_score
+name: bs-score
 description: >-
   Use when auditing a repo, PR, branch, PR review, AI skill, agent config, or one
   or more prompts for claims vs truth and real defects: follow the canonical
-  bs_score SKILL.md, emit findings JSON, then run bs-score (higher = more
+  bs-score SKILL.md, emit findings JSON, then run bs-score (higher = more
   bullshit).
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
-# Bullshit Score (`bs_score`) — {title}
+# Bullshit Score (`bs-score`) — {title}
 
 ## Install
 
@@ -90,7 +90,7 @@ git clone --depth 1 https://github.com/alexhawat/bs_score {project}   # project
 ```
 
 `{personal}` applies to every project; `{project}` is checked into one
-repository. Keep the folder name `bs_score` — it is the skill's name.{note_block}
+repository. Keep the folder name `bs-score` — it is the skill's name.{note_block}
 
 **The command** — one line, and nothing here vendors it:
 
@@ -159,7 +159,7 @@ quotes exist.
 Never invent the score — report only what `bs-score` printed.
 """
 
-README_TEMPLATE = """# bs_score — {title}
+README_TEMPLATE = """# bs-score — {title}
 
 Wrapper for **{title}**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).

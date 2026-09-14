@@ -190,6 +190,17 @@ def build_claims_parser() -> argparse.ArgumentParser:
         help="Emit a findings payload (target_kind=docs) of the failed checks, "
         "ready to score with: bs-score findings.json --repo-root .",
     )
+    parser.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help=(
+            "Path-like spans that are not claims about this tree: runtime "
+            "artifacts a command writes (report.*), illustrative examples. "
+            "Reported as 'skip' with the pattern named, never dropped. Repeatable."
+        ),
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Repeat for more logs")
     parser.add_argument("-q", "--quiet", action="store_true", help="Silence logging")
     return parser
@@ -208,7 +219,12 @@ def claims_main(argv: list[str]) -> int:
         logger.error("--repo-root is not a directory: {}", args.repo_root)
         return EXIT_INVALID
 
-    claims = audit_document(args.document, args.repo_root, check_urls=args.check_links)
+    claims = audit_document(
+        args.document,
+        args.repo_root,
+        check_urls=args.check_links,
+        ignore=tuple(args.ignore),
+    )
     if args.emit_findings:
         payload = claims_as_findings(claims, args.document, args.repo_root)
     else:

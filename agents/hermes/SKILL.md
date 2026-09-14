@@ -1,15 +1,15 @@
 ---
-name: bs_score
+name: bs-score
 description: >-
   Use when auditing a repo, PR, branch, PR review, AI skill, agent config, or one
   or more prompts for claims vs truth and real defects: follow the canonical
-  bs_score SKILL.md, emit findings JSON, then run bs-score (higher = more
+  bs-score SKILL.md, emit findings JSON, then run bs-score (higher = more
   bullshit).
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
-# Bullshit Score (`bs_score`) — Hermes
+# Bullshit Score (`bs-score`) — Hermes
 
 ## Install
 
@@ -19,12 +19,12 @@ Two pieces: the skill files, and the `bs-score` command that scores them.
 `SKILL.md` and the `checklists/` it links to land together:
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.hermes/skills/bs_score   # personal
-git clone --depth 1 https://github.com/alexhawat/bs_score skills/bs_score   # project
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.hermes/skills/bs-score   # personal
+git clone --depth 1 https://github.com/alexhawat/bs_score skills/bs-score   # project
 ```
 
-`~/.hermes/skills/bs_score` applies to every project; `skills/bs_score` is checked into one
-repository. Keep the folder name `bs_score` — it is the skill's name. The skills directory is configurable; `~/.hermes/skills/` is the default.
+`~/.hermes/skills/bs-score` applies to every project; `skills/bs-score` is checked into one
+repository. Keep the folder name `bs-score` — it is the skill's name. The skills directory is configurable; `~/.hermes/skills/` is the default.
 
 **The command** — one line, and nothing here vendors it:
 

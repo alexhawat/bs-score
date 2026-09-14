@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import urllib.request
 from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,22 @@ PATH_LIKE = re.compile(r"^(?:\.?[\w.-]+/)+[\w.-]+/?$|^[\w.-]+\.[A-Za-z0-9]{1,8}$
 
 _URL_SCHEMES = ("http://", "https://", "mailto:", "ftp://")
 
+#: Spans of the document that are a URL or a link target. A version number
+#: inside one (``semver.org/spec/v2.0.0.html``) is part of an address, not a
+#: claim about this project's version.
+URL_OR_LINK = re.compile(
+    r"(?:https?://|ftp://|mailto:)[^\s)\]<>\"']+"
+    r"|\[[^\]]*\]\([^)\s]+\)"
+    r"|\]:\s*\S+"
+)
+#: ``owner/repo`` as this document itself addresses it on GitHub. The trailing
+#: character class eats sentence punctuation, so the capture is trimmed below.
+GITHUB_SLUG = re.compile(r"github\.com/([\w.-]+/[\w.-]+)")
+#: A first segment shaped like a hostname: `semver.org/spec/...` is a URL with
+#: the scheme left off, not a directory in this tree. A leading dot marks a real
+#: path (`.github/workflows`), so those are excluded.
+BARE_HOST = re.compile(r"^(?!\.)[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,24}/")
+
 
 @dataclass(frozen=True)
 class Claim:
@@ -50,11 +67,14 @@ class Claim:
     line: int  # 1-based line of the span in the document
 
     def as_dict(self) -> dict[str, Any]:
+        # `span` is in the report so --ignore has a visible target: the patterns
+        # match this text, and guessing it from the claim sentence is a trap.
         return {
             "kind": self.kind,
             "claim": self.claim,
             "verdict": self.verdict,
             "evidence": self.evidence,
+            "span": self.span,
             "line": self.line,
         }
 
@@ -161,8 +181,17 @@ def _slug(heading: str) -> str:
 
 
 def check_paths(text: str, repo_root: Path) -> list[Claim]:
-    """Inline-code spans that look like paths must exist under the repo root."""
+    """Inline-code spans that look like paths must exist under the repo root.
+
+    One thing that looks like a path and is not: a GitHub ``owner/repo`` slug
+    the document itself addresses as a URL. That is reported as ``skip`` with
+    the reason rather than dropped — a check that vanishes is indistinguishable
+    from one that passed.
+    """
     claims: list[Claim] = []
+    # A repo name cannot end in punctuation, so trailing sentence characters
+    # swept up by the capture are not part of the slug.
+    slugs = {slug.rstrip(".,;:)") for slug in GITHUB_SLUG.findall(text)}
     for match in INLINE_CODE.finditer(text):
         span = match.group(0)
         token = match.group(1).strip()
@@ -170,7 +199,17 @@ def check_paths(text: str, repo_root: Path) -> list[Claim]:
             continue
         if any(token.startswith(scheme) for scheme in _URL_SCHEMES) or "=" in token:
             continue
-        claims.append(_check_path(token, span, _line_of(text, match.start()), repo_root))
+        if BARE_HOST.match(token):
+            continue  # a URL written without its scheme
+        line = _line_of(text, match.start())
+        if token.rstrip("/") in slugs:
+            claims.append(
+                Claim("path", f"path `{token}` exists", "skip",
+                      f"github.com/{token} appears in this document: a repo, not a path",
+                      span, line)
+            )
+            continue
+        claims.append(_check_path(token, span, line, repo_root))
     return claims
 
 
@@ -243,11 +282,27 @@ def check_flags(text: str, facts: ProjectFacts) -> list[Claim]:
     return claims
 
 
+def _url_spans(text: str) -> list[tuple[int, int]]:
+    """Character ranges covered by a URL or a Markdown link."""
+    return [(m.start(), m.end()) for m in URL_OR_LINK.finditer(text)]
+
+
+def _inside(spans: list[tuple[int, int]], offset: int) -> bool:
+    return any(start <= offset < end for start, end in spans)
+
+
 def check_versions(text: str, facts: ProjectFacts) -> list[Claim]:
-    """Version numbers in the doc must agree with the packaging metadata."""
+    """Version numbers in the doc must agree with the packaging metadata.
+
+    Numbers inside a URL are part of an address, not a claim: a link to
+    ``semver.org/spec/v2.0.0.html`` does not assert this project is at 2.0.0.
+    """
     claims: list[Claim] = []
+    urls = _url_spans(text)
     if facts.version:
         for match in VERSION_MENTION.finditer(text):
+            if _inside(urls, match.start()):
+                continue
             mentioned = match.group(1)
             verdict = "pass" if mentioned == facts.version else "fail"
             evidence = (
@@ -262,6 +317,8 @@ def check_versions(text: str, facts: ProjectFacts) -> list[Claim]:
     if facts.python_floor:
         required = tuple(int(p) for p in facts.python_floor.split("."))
         for match in PYTHON_FLOOR_MENTION.finditer(text):
+            if _inside(urls, match.start()):
+                continue
             claimed = match.group(1)
             ok = tuple(int(p) for p in claimed.split(".")) >= required
             claims.append(
@@ -394,9 +451,22 @@ def _check_shell(body: str, label: str, span: str, line: int) -> Claim:
 
 
 def audit_document(
-    doc_path: Path, repo_root: Path, *, check_urls: bool = False
+    doc_path: Path,
+    repo_root: Path,
+    *,
+    check_urls: bool = False,
+    ignore: tuple[str, ...] = (),
 ) -> list[Claim]:
-    """Run every mechanical check against one document. Sorted, deduped."""
+    """Run every mechanical check against one document. Sorted, deduped.
+
+    Args:
+        doc_path: The document to check.
+        repo_root: Tree that paths and packaging metadata resolve against.
+        check_urls: Also fetch http(s) link targets.
+        ignore: Globs of path-like spans that are not claims about this tree —
+            runtime artifacts (``report.*``), illustrative examples. They are
+            reported as ``skip``, never dropped.
+    """
     text = doc_path.read_text(encoding="utf-8", errors="replace")
     facts = load_project_facts(repo_root)
     claims = [
@@ -407,10 +477,33 @@ def audit_document(
         *check_links(text, doc_path, repo_root, check_urls=check_urls),
         *check_code_blocks(text),
     ]
+    claims = [_apply_ignore(claim, ignore) for claim in claims]
     unique: dict[tuple[str, str, str], Claim] = {}
     for claim in claims:
         unique.setdefault((claim.kind, claim.claim, claim.evidence), claim)
     return sorted(unique.values(), key=lambda c: (c.line, c.kind, c.claim))
+
+
+def _apply_ignore(claim: Claim, ignore: tuple[str, ...]) -> Claim:
+    """Turn a matching claim into a ``skip`` that names the pattern.
+
+    Matched against the span with its backticks stripped, and against each word
+    in it, so one flag covers every kind and reads the way the report does:
+    ``--ignore report.md`` for the path claim on `` `report.md` ``, and
+    ``--ignore 1.0.0`` for the version claim whose span is ``version 1.0.0`` —
+    a number a changelog names because naming old releases is what it is for.
+    """
+    if claim.verdict != "fail":
+        return claim
+    stripped = claim.span.strip("`").strip()
+    subjects = {stripped, *stripped.split()}
+    pattern = next(
+        (p for p in ignore if any(fnmatch(s, p) for s in subjects)), None
+    )
+    if pattern is None:
+        return claim
+    return Claim(claim.kind, claim.claim, "skip", f"ignored by --ignore {pattern}",
+                 claim.span, claim.line)
 
 
 def claims_as_findings(claims: list[Claim], doc_path: Path, repo_root: Path) -> dict[str, Any]:

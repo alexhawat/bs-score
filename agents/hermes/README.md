@@ -1,12 +1,12 @@
-# bs_score — Hermes
+# bs-score — Hermes
 
 Wrapper for **Hermes**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.hermes/skills/bs_score` (personal) or `skills/bs_score` (project). The skills directory is configurable; `~/.hermes/skills/` is the default.
+Skills folder: `~/.hermes/skills/bs-score` (personal) or `skills/bs-score` (project). The skills directory is configurable; `~/.hermes/skills/` is the default.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.hermes/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.hermes/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

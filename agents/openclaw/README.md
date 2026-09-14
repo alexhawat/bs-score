@@ -1,12 +1,12 @@
-# bs_score — OpenClaw
+# bs-score — OpenClaw
 
 Wrapper for **OpenClaw**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.openclaw/skills/bs_score` (personal) or `<workspace>/skills/bs_score` (project). OpenClaw also reads `.agents/skills/` and `~/.agents/skills/`.
+Skills folder: `~/.openclaw/skills/bs-score` (personal) or `<workspace>/skills/bs-score` (project). OpenClaw also reads `.agents/skills/` and `~/.agents/skills/`.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.openclaw/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.openclaw/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

@@ -1,4 +1,4 @@
-# bs_score
+# bs-score
 
 [![ci](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml/badge.svg)](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -24,22 +24,22 @@ uv tool install git+https://github.com/alexhawat/bs_score   # puts bs-score on P
 
 **2. The skill** — clone this repository into your runtime's skills folder, so
 the root `SKILL.md` and the `checklists/` it links to land together. The folder
-name is the skill's name, so keep it `bs_score`:
+name is the skill's name, so keep it `bs-score`:
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs-score
 ```
 
 | Runtime | Personal (every project) | Project (checked in) |
 |---------|--------------------------|----------------------|
-| Claude Code | `~/.claude/skills/bs_score` | `.claude/skills/bs_score` |
-| Cursor | `~/.cursor/skills/bs_score` | `.cursor/skills/bs_score` |
-| Codex | `~/.codex/skills/bs_score` | `.agents/skills/bs_score` |
-| OpenCode | `~/.config/opencode/skills/bs_score` | `.opencode/skills/bs_score` |
-| Grok Build | `~/.grok/skills/bs_score` | `.grok/skills/bs_score` |
-| OpenClaw | `~/.openclaw/skills/bs_score` | `<workspace>/skills/bs_score` |
-| Hermes | `~/.hermes/skills/bs_score` | `skills/bs_score` |
-| Anything else | `~/.agents/skills/bs_score` | `.agents/skills/bs_score` |
+| Claude Code | `~/.claude/skills/bs-score` | `.claude/skills/bs-score` |
+| Cursor | `~/.cursor/skills/bs-score` | `.cursor/skills/bs-score` |
+| Codex | `~/.codex/skills/bs-score` | `.agents/skills/bs-score` |
+| OpenCode | `~/.config/opencode/skills/bs-score` | `.opencode/skills/bs-score` |
+| Grok Build | `~/.grok/skills/bs-score` | `.grok/skills/bs-score` |
+| OpenClaw | `~/.openclaw/skills/bs-score` | `<workspace>/skills/bs-score` |
+| Hermes | `~/.hermes/skills/bs-score` | `skills/bs-score` |
+| Anything else | `~/.agents/skills/bs-score` | `.agents/skills/bs-score` |
 
 `.agents/skills/` is the cross-runtime convention — Codex, OpenCode, Grok Build
 and OpenClaw all read it, so one clone there covers the four at once. Per-runtime
@@ -49,7 +49,7 @@ elsewhere; they point back at the root `SKILL.md` rather than duplicating it.
 Or skip all of it and paste this at your agent:
 
 ```text
-Add the bs_score skill from https://github.com/alexhawat/bs_score and learn how to use it.
+Add the bs-score skill from https://github.com/alexhawat/bs_score and learn how to use it.
 ```
 
 <details>
@@ -72,7 +72,7 @@ fetch).
 ## 30-second demo
 
 An auditor that made everything up, scored from a clone
-(`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
+(`git clone https://github.com/alexhawat/bs_score bs-score && cd bs-score && uv sync`):
 
 ```console
 $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
@@ -84,7 +84,7 @@ $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 - evidence: verified (path_not_found 1, quote_not_found 3)
 - depth: **unreported** — no `audit.files_read` block, so depth is unverifiable
 - blast radius: 0 file(s) affected across 10 scanned
-- scoring `d9fd7c3c061f` · schema `c68d008427e4`
+- scoring `30ad8b532c34` · schema `991705a46093`
 
 ### Rejected (not scored)
 
@@ -211,6 +211,7 @@ bs-score FINDINGS [--repo-root DIR] [--sources PATH ...] [--no-verify]
                   [--scoring FILE --allow-custom-scoring] [-v|-q]
 
 bs-score claims DOC [--repo-root DIR] [--check-links] [--emit-findings]
+                    [--ignore GLOB ...]
 ```
 
 Highlights:
@@ -225,6 +226,7 @@ Highlights:
 | `--format sarif` | SARIF 2.1.0 for GitHub code scanning |
 | `--baseline` / `--write-baseline` | Accept known findings once; gate only on new ones |
 | `claims` | LLM-free claim checks on a document; `--emit-findings` for a scorable payload |
+| `--ignore` | Spans that are not claims about this tree — a file a command writes, a version a changelog records. Reported as `skip` naming the pattern, never dropped |
 
 Exit codes: `0` scored and within threshold · `1` over `--fail-over` (or
 `claims` found a provably false claim) · `2` unusable input.
@@ -275,7 +277,7 @@ Contributor rules for agents: [`AGENTS.md`](AGENTS.md). Releasing (owner-only):
 
 **Is the score objective?**
 No — it's *verifiable*. An LLM still chooses what to look for and how bad it
-is. What bs_score removes is the unverifiable part: every point traces to a
+is. What bs-score removes is the unverifiable part: every point traces to a
 quote that provably exists in the artifact, under pinned weights, with a
 sha256 receipt for the weights, the schema, and the findings. You can replay
 any score and get the same number.

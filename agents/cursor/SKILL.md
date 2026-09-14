@@ -1,15 +1,15 @@
 ---
-name: bs_score
+name: bs-score
 description: >-
   Use when auditing a repo, PR, branch, PR review, AI skill, agent config, or one
   or more prompts for claims vs truth and real defects: follow the canonical
-  bs_score SKILL.md, emit findings JSON, then run bs-score (higher = more
+  bs-score SKILL.md, emit findings JSON, then run bs-score (higher = more
   bullshit).
 allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
-# Bullshit Score (`bs_score`) — Cursor
+# Bullshit Score (`bs-score`) — Cursor
 
 ## Install
 
@@ -19,12 +19,12 @@ Two pieces: the skill files, and the `bs-score` command that scores them.
 `SKILL.md` and the `checklists/` it links to land together:
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.cursor/skills/bs_score   # personal
-git clone --depth 1 https://github.com/alexhawat/bs_score .cursor/skills/bs_score   # project
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.cursor/skills/bs-score   # personal
+git clone --depth 1 https://github.com/alexhawat/bs_score .cursor/skills/bs-score   # project
 ```
 
-`~/.cursor/skills/bs_score` applies to every project; `.cursor/skills/bs_score` is checked into one
-repository. Keep the folder name `bs_score` — it is the skill's name. Cursor also reads `.agents/skills/` inside the repository.
+`~/.cursor/skills/bs-score` applies to every project; `.cursor/skills/bs-score` is checked into one
+repository. Keep the folder name `bs-score` — it is the skill's name. Cursor also reads `.agents/skills/` inside the repository.
 
 **The command** — one line, and nothing here vendors it:
 

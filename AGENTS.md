@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Working agreement for agentic contributors to bs_score.
+Working agreement for agentic contributors to bs-score.
 
 ## Setup
 
@@ -54,3 +54,10 @@ All five run in CI; a red one blocks the merge.
   `checklists/`. Weights: `scoring.json`. Findings contract:
   `findings.schema.json`.
 - The scorer lives in `src/bs_score/`; `score.py` is a thin shim for clones.
+
+## Naming
+
+The product, the CLI, the skill and its folder are **`bs-score`**. Identifiers
+stay snake_case because they have to: the Python package is `src/bs_score/`
+(`import bs-score` is a syntax error), and so are the JSON keys it emits
+(`bs_score_version`, the SARIF `bs_score` property). Don't "fix" those.
