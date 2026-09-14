@@ -22,6 +22,7 @@ from .report import Options, build_report, sha256_of_document
 from .resources import SCHEMA_FILENAME, SCORING_FILENAME, load_json_file, locate
 from .scoring import load_scoring
 from .sources import load_sources
+from .sweep import TreeIndex
 
 
 def audit_tool(document: str, repo_root: str = ".") -> list[dict[str, Any]]:
@@ -43,6 +44,9 @@ def score_tool(
     scoring = load_scoring(scoring_document, scoring_sha)
     registry = load_sources([Path(s) for s in sources or []])
     verifier = Verifier(Path(repo_root), registry)
+    # Same tree the CLI sweeps, or this tool returns a report missing a section
+    # the CLI produces.
+    tree = TreeIndex(Path(repo_root))
     return build_report(
         payload,
         scoring,
@@ -51,6 +55,7 @@ def score_tool(
         verifier,
         Options(),
         findings_sha256=sha256_of_document(payload),
+        tree=tree,
     )
 
 
