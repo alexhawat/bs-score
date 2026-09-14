@@ -4,13 +4,12 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 
-**AI lies, sometimes people. bs_score catches it — every claim is quoted, every quote
-is verified, and the score comes from code, not prose. Use it to catch bullshit in repo (readme vs code), PR, PR review, skills, agents and more.**
+**An LLM finds the defects and quotes the evidence. The `bs-score` CLI verifies
+every quote against the artifact it names, then scores what survived.** Higher =
+more bullshit. A fabricated audit scores **0**, because none of its quotes exist.
 
-The LLM *finds* defects and quotes the evidence. The `bs-score` CLI *verifies
-every quote against the artifact it names*, then scores what survived. Higher =
-more bullshit. A fabricated audit scores **0**, because none of its quotes
-exist.
+Point it at a repo (README vs code), a PR, a PR review, a skill, an agent config,
+or a prompt.
 
 ## Install
 
@@ -72,44 +71,8 @@ fetch).
 
 ## 30-second demo
 
-From a clone (`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
-
-```console
-$ bs-score examples/findings.valid.json --repo-root examples/fixture-repo --format md
-## Bullshit Score: **17** (bullshit)
-
-- review type: `repo` (profile `repo`)
-- target: `examples/fixture-repo`
-- kept 5 · rejected 1 · deduped 1 · baselined 0
-- evidence: verified (verified 6)
-- depth: deep — 4 file(s) read, 3 of them implementation (40% of the tree)
-- blast radius: 4 file(s) affected across 10 scanned
-- scoring `d9fd7c3c061f` · schema `c68d008427e4`
-
-| type | count | points |
-|------|------:|-------:|
-| `breaking_bug` | 1 | 5 |
-| `bug` | 1 | 3 |
-| `missing_feature` | 1 | 3 |
-| `security_issue` | 1 | 4 |
-| `wrong_claim` | 1 | 2 |
-
-### Kept
-
-| type | points | path | files | title |
-|---|--:|---|--:|---|
-| `wrong_claim` | 2 | `README.md:9` | 1 | README claims OAuth; only API keys exist |
-| `missing_feature` | 3 | `README.md:10` | 1 | Streaming API documented but absent |
-| `bug` | 3 | `src/api.py:6` | 1 | Off-by-one in pagination _(merged 1 report(s) of the same root cause)_ |
-| `security_issue` | 4 | `src/db.py:6` | 1 | SQL built with f-string |
-| `breaking_bug` | 5 | `src/users.py:6` | 1 | delete_user ignores ownership |
-
-### Rejected (not scored)
-
-- `f6-bad` — missing_evidence: path is blank
-```
-
-Same CLI, an auditor that made everything up:
+An auditor that made everything up, scored from a clone
+(`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
 
 ```console
 $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
@@ -131,8 +94,10 @@ $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 - `h4` — unverified_evidence: quote_not_found: quote is not present in src/users.py
 ```
 
-Hallucinating earns nothing: a finding whose quote is not there is rejected,
-not scored — four confident fabrications add up to zero.
+Hallucinating earns nothing: a finding whose quote is not there is rejected, not
+scored — four confident fabrications add up to zero. For what a *real* report
+looks like, run `bs-score examples/findings.valid.json --repo-root
+examples/fixture-repo --format md` (it scores 17).
 
 ## What it catches
 
@@ -181,60 +146,17 @@ Markdown links, and fenced code blocks are checked deterministically, and
 
 ## Counting, clustering, and depth
 
-Three things that stop an audit being graded on how hard the model looked.
+Three mechanisms keep the score from depending on how hard the model looked.
+Every verified quote is **swept across the tree**, so `files_affected` is
+measured rather than claimed — file the defect once and the report says it is in
+twenty-six files. Findings sharing a `cluster` id **collapse into one charge**,
+so a root cause worded three ways costs its points once. And a payload's
+`audit.files_read` is **checked against the tree**, so a docs-only pass is
+stamped `shallow` and a listed file that does not exist earns no credit;
+`--require-depth` turns that into a non-zero exit.
 
-**The count is measured.** Once a quote is verified, the scorer searches the
-whole tree for it and reports every file it lands in. You file the defect once;
-the report says it is in twenty-six files. Filing it twenty-six times earns
-nothing. The sweep reads every text file git lists — tracked, plus untracked
-files that are not ignored — once, about 1.4s over a 2,300-file repository; it
-skips binaries and anything over 1 MB, and caps at 200 occurrences per quote.
-`--no-scan` opts out; `--fold-case` is honoured so the sweep always matches the
-way verification did.
-
-**A root cause is charged once.** The same defect is often worded differently in
-each place, which defeats quote-based dedupe. Give those findings the same
-`cluster` id and they collapse into one scored finding whose blast radius is the
-union of all their quotes:
-
-```bash
-uv run bs-score examples/findings.blast.json --repo-root examples/fixture-repo --format md
-# one root cause reported three ways → 1 finding, 3 points, 3 files affected
-```
-
-**A shallow audit says so.** A payload can carry what it actually opened:
-
-```json
-{
-  "audit": {
-    "files_read": ["README.md", "src/cli.py", "src/api.py"],
-    "notes": "Docs claims plus every module under src/."
-  }
-}
-```
-
-For `repo`, `pr`, `branch` and `skill` the report is stamped `shallow` when that
-list holds no implementation file and `unreported` when the block is missing.
-
-A path in the list that does not exist earns **no credit**: it is excluded from
-`files_read`, `code_files_read` and `coverage`, and named in `missing_files`. It
-cannot turn a shallow pass into a deep one on its own — but if the audit also
-read a real implementation file, the `status` under `depth` is still `deep`. The
-field that accounts for the phantom is `sufficient`, and that is what
-`--require-depth` gates on:
-
-| audit block | `status` | `sufficient` | `--require-depth` |
-|---|---|---|---|
-| docs only | `shallow` | `false` | exit 1 |
-| docs + a phantom "code" file | `shallow` | `false` | exit 1 |
-| real code + a phantom file | `deep` | `false` | exit 1 |
-| real code, all paths exist | `deep` | `true` | exit 0 |
-
-```console
-$ bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --format md
-- depth: **shallow** — 2 file(s) read, 0 of them implementation (20% of the tree); **1 listed file(s) do not exist**
-- blast radius: 1 file(s) affected across 10 scanned
-```
+Details, including the `--require-depth` truth table:
+[`docs/counting-and-depth.md`](docs/counting-and-depth.md).
 
 ## Scoring
 
@@ -250,54 +172,33 @@ does not cost the same everywhere.
 | `bug` | Incorrect behaviour, not catastrophic | 3 | 3 | 4 | 3 | 2 | 3 | 1 |
 | `wrong_claim` | A claim the artifact contradicts | 2 | 2 | 3 | 3 | 3 | 3 | 5 |
 
-Why they differ: a `pr` is a gate, so landing defects outweigh doc drift. A
-`review` is graded on its claims. A `skill` that advertises a capability it
-does not have is the defining skill failure. An `agent` or a `prompt` is an
-instruction surface, so unsafe instructions weigh most. A `docs` audit is
-claims-only, so a wrong claim weighs most.
-
-Weights live in [`scoring.json`](scoring.json). `confidence` is display-only.
-
-**Score bands** (display-only; the raw sum is the score):
-
-| score | band |
-|------:|------|
-| 0 | clean |
-| 1–5 | minor drift |
-| 6–15 | misleading |
-| 16+ | bullshit |
+Weights live in [`scoring.json`](scoring.json), with the rationale for each
+column in its `type_notes`. `confidence` is display-only, and so is the band the
+report prints: 0 clean · 1–5 minor drift · 6–15 misleading · 16+ bullshit.
 
 ## Examples
 
-Every number below is produced by committed fixtures and asserted in CI; the
+Every number here comes from a committed fixture and is asserted in CI; the
 artifacts the quotes point at live under `examples/`.
 
 | example | review type | score | shows |
 |---------|-------------|------:|-------|
 | `findings.valid.json` | `repo` | **17** | README lies + real bugs; one duplicate merged, one blank-evidence finding rejected |
-| `findings.review.json` | `review` | **10** | False claim, hollow "verified", a defect the review missed |
-| `findings.skill.json` | `skill` | **7** | SKILL.md names a script that does not exist; documents the wrong flag |
-| `findings.agent.json` | `agent` | **6** | Phantom skill; "never push" next to "auto-push to main" |
-| `findings.prompt.json` | `prompt` | **18** | Injection surface, a token in the prompt, self-contradictions |
-| `findings.docs.json` | `docs` | **15** | A guide's three provable lies (Python floor, config path, phantom flag) |
-| `findings.i18n.json` | `docs` | **10** | French and Japanese READMEs — quotes verify verbatim in any language |
-| `findings.wild-tinycache.json` | `repo` | **8** | In-the-wild pattern: a 0.9 README promising 1.0 features |
-| `findings.wild-greetcli.json` | `docs` | **10** | In-the-wild pattern: phantom flag, understated Python floor |
 | `findings.blast.json` | `repo` | **5** | One root cause reported three ways — merged, then counted across every file it reaches |
 | `findings.shallow.json` | `repo` | **2** | A docs-only pass that also claims to have read a file that does not exist |
 | `findings.hallucinated.json` | `repo` | **0** | Four confident fabrications, all rejected |
 
 ```bash
-uv run bs-score examples/findings.valid.json  --repo-root examples/fixture-repo
-uv run bs-score examples/findings.docs.json   --repo-root examples/fixture-docs
-uv run bs-score examples/findings.prompt.json --repo-root examples/fixture-prompts \
-    --sources examples/fixture-prompts
-uv run bs-score examples/findings.blast.json  --repo-root examples/fixture-repo
-uv run bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --require-depth
+bs-score examples/findings.valid.json   --repo-root examples/fixture-repo
+bs-score examples/findings.blast.json   --repo-root examples/fixture-repo
+bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --require-depth
 ```
 
-Each writes the same report as the committed `examples/score.*.json` receipt.
-Details: [`examples/README.md`](examples/README.md).
+Eight more — `review`, `skill`, `agent`, `prompt`, `docs`, two in-the-wild
+repositories, and a French/Japanese pair proving quotes verify verbatim in any
+language — are documented with their commands in
+[`examples/README.md`](examples/README.md). Each writes the same report as its
+committed `examples/score.*.json` receipt.
 
 ## CLI
 
@@ -339,22 +240,9 @@ Exit codes: `0` scored and within threshold · `1` over `--fail-over` (or
     fail-over: "10"
 ```
 
-Post the Markdown report as a PR comment:
-
-```yaml
-- uses: alexhawat/bs_score@main
-  with: { findings: findings.json, format: md }
-- uses: actions/github-script@v7
-  if: always()
-  with:
-    script: |
-      const fs = require('fs');
-      await github.rest.issues.createComment({
-        owner: context.repo.owner, repo: context.repo.repo,
-        issue_number: context.issue.number,
-        body: fs.readFileSync('report.md', 'utf8'),
-      });
-```
+It writes the report as a file in the format you ask for and exposes `score`,
+`band` and `report` outputs. [`docs/github-action.md`](docs/github-action.md)
+has the PR-comment and code-scanning recipes.
 
 **SARIF** — `bs-score findings.json --format sarif -o report.sarif`, then the
 codeql-action upload-sarif step puts findings into code scanning.
