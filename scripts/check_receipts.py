@@ -70,7 +70,8 @@ def main(argv: list[str] | None = None) -> int:
             text=True,
             cwd=REPO,
         )
-        if result.returncode != 0:
+        # 0 = scored; 3 = NOT_VALID (findings present, nothing verified)
+        if result.returncode not in (0, 3):
             failures.append(f"{name}: exit {result.returncode}\n{result.stderr}")
             continue
         if args.write:

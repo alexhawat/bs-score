@@ -6,7 +6,7 @@ import json
 
 from conftest import EXAMPLES, load_example, load_receipt
 
-from bs_score.cli import main
+from bs_score.cli import EXIT_NOT_VALID, main
 
 I18N = EXAMPLES / "fixture-i18n"
 
@@ -36,7 +36,8 @@ def test_a_translated_quote_does_not_verify(tmp_path, capsys):
     findings.write_text(json.dumps(payload), encoding="utf-8")
 
     code = main([str(findings), "--repo-root", str(I18N), "-q"])
-    assert code == 0
+    assert code == EXIT_NOT_VALID
     report = json.loads(capsys.readouterr().out)
-    assert report["score"] == 0
+    assert report["score"] is None
+    assert report["verdict"] == "not_valid"
     assert report["rejected"][0]["reason"] == "unverified_evidence"

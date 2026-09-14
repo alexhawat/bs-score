@@ -2,7 +2,7 @@
 """Run bs_score against itself and assert the properties that make it worth using.
 
 These are the claims a reader of the README would want checked before trusting a
-number: a fabricated audit earns nothing, a root cause is charged once but
+number: a fabricated audit is NOT_VALID (not a clean 0), a root cause is charged once but
 counted everywhere, a docs-only pass cannot pass the depth gate, and the v1
 defects stay fixed. Each one runs the real CLI.
 """
@@ -25,7 +25,7 @@ def score(findings: str, *args: str) -> dict:
         text=True,
         cwd=REPO,
     )
-    if result.returncode not in (0, 1):
+    if result.returncode not in (0, 1, 3):
         raise SystemExit(f"{findings}: exit {result.returncode}\n{result.stderr}")
     return json.loads(result.stdout)
 
@@ -49,9 +49,11 @@ def main() -> int:
     )
     checks.append(
         (
-            "a fabricated audit scores 0",
-            fabricated["score"] == 0 and fabricated["kept_count"] == 0,
-            f"score={fabricated['score']} kept={fabricated['kept_count']}",
+            "a fabricated audit is NOT_VALID",
+            fabricated["verdict"] == "not_valid"
+            and fabricated["score"] is None
+            and fabricated["kept_count"] == 0,
+            f"verdict={fabricated['verdict']} score={fabricated['score']} kept={fabricated['kept_count']}",
         )
     )
 
@@ -59,8 +61,10 @@ def main() -> int:
     checks.append(
         (
             "the v1 defects stay fixed",
-            self_audit["score"] == 0 and self_audit["rejected_count"] == 8,
-            f"score={self_audit['score']} rejected={self_audit['rejected_count']}",
+            self_audit["verdict"] == "not_valid"
+            and self_audit["score"] is None
+            and self_audit["rejected_count"] == 8,
+            f"verdict={self_audit['verdict']} score={self_audit['score']} rejected={self_audit['rejected_count']}",
         )
     )
 

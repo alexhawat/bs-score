@@ -1,9 +1,9 @@
 {
   "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
-  "score": 0,
-  "band": "clean",
-  "verdict": "pass",
+  "score": null,
+  "band": "NOT_VALID",
+  "verdict": "not_valid",
   "fail_over": null,
   "target_kind": "repo",
   "target_ref": "alexhawat/bs_score@3581e0b (v1 audit, kept as a regression gate)",

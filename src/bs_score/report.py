@@ -31,6 +31,8 @@ UNVERIFIABLE_EVIDENCE = "unverifiable_evidence"
 DUPLICATE = "duplicate"
 CROSS_PATH_DUPLICATE = "duplicate_across_paths"
 SAME_CLUSTER = "same_root_cause"
+NOT_VALID_BAND = "NOT_VALID"
+NOT_VALID_VERDICT = "not_valid"
 
 
 class PayloadError(ValueError):
@@ -286,8 +288,20 @@ def build_report(
 
     depth_report = depth_module.evaluate(payload, target_kind, scoring.depth, tree)
 
+    findings_count = len(payload["findings"])
+    # 0 means clean (no problem). Findings present with nothing kept/baselined
+    # under an enabled verifier means nothing verified — NOT_VALID, not clean.
+    not_valid = (
+        verifier.enabled
+        and findings_count > 0
+        and len(kept) == 0
+        and len(baselined) == 0
+    )
+
     verdict_label = "pass"
-    if options.fail_over is not None and total > options.fail_over:
+    if not_valid:
+        verdict_label = NOT_VALID_VERDICT
+    elif options.fail_over is not None and total > options.fail_over:
         verdict_label = "fail"
     if options.require_depth and not depth_report.sufficient:
         verdict_label = "fail"
@@ -295,8 +309,8 @@ def build_report(
     report: dict[str, Any] = {
         "bs_score_version": __version__,
         "label": scoring.label,
-        "score": total,
-        "band": score_band(total),
+        "score": None if not_valid else total,
+        "band": NOT_VALID_BAND if not_valid else score_band(total),
         "verdict": verdict_label,
         "fail_over": options.fail_over,
         "target_kind": target_kind,
@@ -344,8 +358,8 @@ def build_report(
         "baselined": baselined,
     }
     logger.info(
-        "score {} ({} kept, {} rejected, {} deduped)",
-        total,
+        "{} ({} kept, {} rejected, {} deduped)",
+        "NOT_VALID" if not_valid else f"score {total}",
         len(kept),
         len(rejected),
         len(deduped),
@@ -389,8 +403,9 @@ def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
     evidence = report["evidence"]
     statuses = ", ".join(f"{k} {v}" for k, v in evidence["by_status"].items()) or "n/a"
+    score_display = report["band"] if report.get("verdict") == NOT_VALID_VERDICT else report["score"]
     lines = [
-        f"## {report['label']}: **{report['score']}** ({report['band']})",
+        f"## {report['label']}: **{score_display}** ({report['band']})",
         "",
         f"- review type: `{report['target_kind']}` (profile `{report['profile']}`)",
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
@@ -468,6 +483,8 @@ def _describe_blast_radius(blast: dict[str, Any]) -> str:
 
 __all__ = [
     "BANDS",
+    "NOT_VALID_BAND",
+    "NOT_VALID_VERDICT",
     "CROSS_PATH_DUPLICATE",
     "DUPLICATE",
     "MISSING_EVIDENCE",

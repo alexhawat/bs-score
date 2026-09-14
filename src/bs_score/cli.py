@@ -4,6 +4,7 @@ Exit codes:
     0  scored, and at or under ``--fail-over`` when given
     1  scored, and over ``--fail-over``
     2  unusable input (bad payload envelope, bad scoring file, bad --sources)
+    3  NOT_VALID — findings were present but nothing verified (not a clean 0)
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ from .sweep import TreeIndex
 EXIT_OK = 0
 EXIT_OVER_THRESHOLD = 1
 EXIT_INVALID = 2
+EXIT_NOT_VALID = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -352,6 +354,8 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("wrote {}", args.output)
     sys.stdout.write(text if text.endswith("\n") else text + "\n")
 
+    if report["verdict"] == "not_valid":
+        return EXIT_NOT_VALID
     return EXIT_OVER_THRESHOLD if report["verdict"] == "fail" else EXIT_OK
 
 
@@ -362,6 +366,7 @@ def run() -> None:
 
 __all__ = [
     "EXIT_INVALID",
+    "EXIT_NOT_VALID",
     "EXIT_OK",
     "EXIT_OVER_THRESHOLD",
     "build_claims_parser",
