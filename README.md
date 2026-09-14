@@ -12,30 +12,59 @@ every quote against the artifact it names*, then scores what survived. Higher =
 more bullshit. A fabricated audit scores **0**, because none of its quotes
 exist.
 
-## Use with your agent — one line
+## Install
 
-Paste this into your Claude, Cursor, Grok , Grok bot, Opencode, chatgpt agents:
+Two pieces: the **skill** (the recipe your agent follows) and the **`bs-score`
+command** (what verifies and scores what it emits).
 
-```text
-Add the bs_score skill from https://github.com/alexhawat/bs_score and learn how to use it. 
+**1. The command** — one line, every runtime:
+
+```bash
+uv tool install git+https://github.com/alexhawat/bs_score   # puts bs-score on PATH
 ```
 
-Or wire it up per runtime:
+**2. The skill** — clone this repository into your runtime's skills folder, so
+the root `SKILL.md` and the `checklists/` it links to land together. The folder
+name is the skill's name, so keep it `bs_score`:
 
-| Runtime | One-line setup |
-|---------|----------------|
-| Claude Code | `git clone https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score` |
-| Cursor | Clone anywhere, then `@` the root `SKILL.md` — or copy `agents/cursor/` into your skills path |
-| Codex | Append the root `SKILL.md` to your `AGENTS.md` |
-| Grok | Attach the root `SKILL.md` as the bot skill, or copy `agents/grok/` |
-| Hermes | Register `agents/hermes/` as a skill, or load the root `SKILL.md` |
-| OpenClaw | Register `agents/openclaw/` as a skill, or load the root `SKILL.md` |
-| OpenCode | Register `agents/opencode/` as a skill, or load the root `SKILL.md` |
-| **Any agent** | The paste line above — anything that can follow a skill file and run a command works |
+```bash
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score
+```
 
-Either way the agent needs the `bs-score` CLI at scoring time; the git one-liner
-covers that. The PyPI release will make the scorer plain `uvx bs-score`,
-no clone at all.
+| Runtime | Personal (every project) | Project (checked in) |
+|---------|--------------------------|----------------------|
+| Claude Code | `~/.claude/skills/bs_score` | `.claude/skills/bs_score` |
+| Cursor | `~/.cursor/skills/bs_score` | `.cursor/skills/bs_score` |
+| Codex | `~/.codex/skills/bs_score` | `.agents/skills/bs_score` |
+| OpenCode | `~/.config/opencode/skills/bs_score` | `.opencode/skills/bs_score` |
+| Grok Build | `~/.grok/skills/bs_score` | `.grok/skills/bs_score` |
+| OpenClaw | `~/.openclaw/skills/bs_score` | `<workspace>/skills/bs_score` |
+| Hermes | `~/.hermes/skills/bs_score` | `skills/bs_score` |
+| Anything else | `~/.agents/skills/bs_score` | `.agents/skills/bs_score` |
+
+`.agents/skills/` is the cross-runtime convention — Codex, OpenCode, Grok Build
+and OpenClaw all read it, so one clone there covers the four at once. Per-runtime
+wrapper folders live under [`agents/`](agents/) for anyone who keeps the clone
+elsewhere; they point back at the root `SKILL.md` rather than duplicating it.
+
+Or skip all of it and paste this at your agent:
+
+```text
+Add the bs_score skill from https://github.com/alexhawat/bs_score and learn how to use it.
+```
+
+<details>
+<summary>Other ways to get the command</summary>
+
+- `uvx --from git+https://github.com/alexhawat/bs_score bs-score …` — no install,
+  resolved per run. CI runs that exact command against every commit
+  (`uvx-install` job), so it is proven, not promised.
+- From a clone: `uv sync`, then `uv run bs-score …` — or `python3 score.py …`,
+  which needs no uv and no network.
+- `uvx bs-score` (no `--from`) will work after the planned PyPI release; today it
+  has nothing to fetch.
+
+</details>
 
 LLM-facing context files: [`llms.txt`](llms.txt) (index) and
 [`llms-full.txt`](llms-full.txt) (the whole recipe, weights, and schema in one
@@ -43,57 +72,67 @@ fetch).
 
 ## 30-second demo
 
-```bash
-uvx --from git+https://github.com/alexhawat/bs_score bs-score --help
-```
-
-Then, from a clone (`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
+From a clone (`git clone https://github.com/alexhawat/bs_score && cd bs_score && uv sync`):
 
 ```console
-$ uv run bs-score examples/findings.valid.json --repo-root examples/fixture-repo --format md
+$ bs-score examples/findings.valid.json --repo-root examples/fixture-repo --format md
 ## Bullshit Score: **17** (bullshit)
 
+- review type: `repo` (profile `repo`)
+- target: `examples/fixture-repo`
 - kept 5 · rejected 1 · deduped 1 · baselined 0
 - evidence: verified (verified 6)
+- depth: deep — 4 file(s) read, 3 of them implementation (40% of the tree)
+- blast radius: 4 file(s) affected across 10 scanned
+- scoring `d9fd7c3c061f` · schema `c68d008427e4`
 
-| `wrong_claim`     | 2 | README claims OAuth; only API keys exist |
-| `missing_feature` | 3 | Streaming API documented but absent      |
-| `bug`             | 3 | Off-by-one in pagination                 |
-| `security_issue`  | 4 | SQL built with f-string                  |
-| `breaking_bug`    | 5 | delete_user ignores ownership            |
+| type | count | points |
+|------|------:|-------:|
+| `breaking_bug` | 1 | 5 |
+| `bug` | 1 | 3 |
+| `missing_feature` | 1 | 3 |
+| `security_issue` | 1 | 4 |
+| `wrong_claim` | 1 | 2 |
+
+### Kept
+
+| type | points | path | files | title |
+|---|--:|---|--:|---|
+| `wrong_claim` | 2 | `README.md:9` | 1 | README claims OAuth; only API keys exist |
+| `missing_feature` | 3 | `README.md:10` | 1 | Streaming API documented but absent |
+| `bug` | 3 | `src/api.py:6` | 1 | Off-by-one in pagination _(merged 1 report(s) of the same root cause)_ |
+| `security_issue` | 4 | `src/db.py:6` | 1 | SQL built with f-string |
+| `breaking_bug` | 5 | `src/users.py:6` | 1 | delete_user ignores ownership |
+
+### Rejected (not scored)
+
+- `f6-bad` — missing_evidence: path is blank
 ```
 
 Same CLI, an auditor that made everything up:
 
 ```console
-$ uv run bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
+$ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
 ## Bullshit Score: **0** (clean)
 
-- kept 0 · rejected 4
+- review type: `repo` (profile `repo`)
+- target: `examples/fixture-repo (fabricated audit)`
+- kept 0 · rejected 4 · deduped 0 · baselined 0
 - evidence: verified (path_not_found 1, quote_not_found 3)
+- depth: **unreported** — no `audit.files_read` block, so depth is unverifiable
+- blast radius: 0 file(s) affected across 10 scanned
+- scoring `d9fd7c3c061f` · schema `c68d008427e4`
 
 ### Rejected (not scored)
+
 - `h1` — unverified_evidence: quote_not_found: quote is not present in src/api.py
 - `h2` — unverified_evidence: path_not_found: src/config.py does not exist
+- `h3` — unverified_evidence: quote_not_found: quote is not present in README.md
+- `h4` — unverified_evidence: quote_not_found: quote is not present in src/users.py
 ```
 
 Hallucinating earns nothing: a finding whose quote is not there is rejected,
 not scored — four confident fabrications add up to zero.
-
-<details>
-<summary>Install caveats</summary>
-
-- The one-liner above installs the default branch straight from git — no
-  clone, no virtualenv, thanks to `uv`. CI runs that exact command against
-  every commit (`uvx-install` job), so it is proven, not promised.
-- `uvx bs-score` (no `--from`) will work after the planned PyPI release;
-  today it has nothing to fetch.
-- From a clone, `uv run bs-score …` and `python3 score.py …` do the same
-  thing with no network at all.
-
-</details>
-
-
 
 ## What it catches
 
@@ -147,10 +186,11 @@ Three things that stop an audit being graded on how hard the model looked.
 **The count is measured.** Once a quote is verified, the scorer searches the
 whole tree for it and reports every file it lands in. You file the defect once;
 the report says it is in twenty-six files. Filing it twenty-six times earns
-nothing. The sweep reads tracked text files once — about 1.4s over a 2,300-file
-repository — skips binaries and anything over 1 MB, and caps at 200 occurrences
-per quote. `--no-scan` opts out; `--fold-case` is honoured so the sweep always
-matches the way verification did.
+nothing. The sweep reads every text file git lists — tracked, plus untracked
+files that are not ignored — once, about 1.4s over a 2,300-file repository; it
+skips binaries and anything over 1 MB, and caps at 200 occurrences per quote.
+`--no-scan` opts out; `--fold-case` is honoured so the sweep always matches the
+way verification did.
 
 **A root cause is charged once.** The same defect is often worded differently in
 each place, which defeats quote-based dedupe. Give those findings the same
@@ -325,9 +365,9 @@ codeql-action upload-sarif step puts findings into code scanning.
 `bs-score-mcp` exposes `audit` and `score` tools over stdio.
 
 **Self-audit** — the v1 audit of this repository (`examples/findings.self.json`)
-is replayed as a CI gate on every PR (`--fail-over 0`): all eight defects it
-documented must stay fixed — reintroduce one, its quote verifies again, and CI
-goes red.
+is replayed as a CI gate on every PR (`scripts/check_dogfood.py`, which asserts
+the score is 0): all eight defects it documented must stay fixed — reintroduce
+one, its quote verifies again, and CI goes red.
 
 ## Development
 

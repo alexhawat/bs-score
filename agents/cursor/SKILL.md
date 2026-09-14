@@ -11,7 +11,26 @@ license: MIT
 
 # Bullshit Score (`bs_score`) — Cursor
 
-Add this folder under your Cursor skills path, or `@` the root `SKILL.md` from a clone.
+## Install
+
+Two pieces: the skill files, and the `bs-score` command that scores them.
+
+**The skill** — clone the repository into Cursor's skills folder, so the root
+`SKILL.md` and the `checklists/` it links to land together:
+
+```bash
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.cursor/skills/bs_score   # personal
+git clone --depth 1 https://github.com/alexhawat/bs_score .cursor/skills/bs_score   # project
+```
+
+`~/.cursor/skills/bs_score` applies to every project; `.cursor/skills/bs_score` is checked into one
+repository. Keep the folder name `bs_score` — it is the skill's name. Cursor also reads `.agents/skills/` inside the repository.
+
+**The command** — one line, and nothing here vendors it:
+
+```bash
+uv tool install git+https://github.com/alexhawat/bs_score   # puts bs-score on PATH
+```
 
 ## Canonical pack
 
@@ -27,7 +46,7 @@ bs-score findings.json --repo-root .          # installed
 uv run bs-score findings.json --repo-root .   # from a clone of the repo
 ```
 
-Install options — including running it without a clone — are in the
+Every install option is in the
 [repository README](https://github.com/alexhawat/bs_score#install).
 
 Quotes are verified against the files they name before anything is scored, so

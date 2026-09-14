@@ -1,13 +1,15 @@
 # Wire bs_score into pre-commit.com:
 #
 #   - repo: https://github.com/alexhawat/bs_score
-#     rev: v2.1.0
+#     rev: main            # no releases are tagged yet — pin a sha or a tag once there is one
 #     hooks:
 #       - id: bs-score
+#         files: ^findings\.json$
 #         args: [--repo-root, ., --fail-over, "10"]
 #
-# The hook scores any findings JSON it is handed (name one explicitly with
-# `files:` if your findings don't match the default JSON filter).
+# `files:` is not optional. bs-score takes exactly one findings payload, so
+# without it pre-commit hands the hook every staged JSON file and the run fails
+# with "unrecognized arguments" (or exit 2 on the first non-findings JSON).
 - id: bs-score
   name: bs-score
   description: >-
