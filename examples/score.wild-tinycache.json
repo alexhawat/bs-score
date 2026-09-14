@@ -37,6 +37,7 @@
   },
   "depth": {
     "status": "unreported",
+    "sufficient": false,
     "requires_code_pass": true,
     "files_read": 0,
     "code_files_read": 0,

@@ -180,3 +180,61 @@ def test_require_depth_gates_on_the_code_pass(payload, expected, capsys):
 
 def test_require_depth_needs_something_to_check_against(capsys):
     assert run([BLAST, "--no-verify", "--require-depth"], capsys)[0] == EXIT_INVALID
+
+
+# --- the depth truth table the README documents -------------------------------
+
+
+@pytest.mark.parametrize(
+    "files_read, status, sufficient, exit_code",
+    [
+        # docs only: no implementation was read
+        (["README.md", "docs/install.md"], "shallow", False, EXIT_OVER_THRESHOLD),
+        # the only "code" file is a phantom, so it earns no credit
+        (["README.md", "src/nope.py"], "shallow", False, EXIT_OVER_THRESHOLD),
+        # real code *and* a phantom: deep, but not sufficient
+        (["README.md", "src/cli.py", "src/nope.py"], "deep", False, EXIT_OVER_THRESHOLD),
+        # real code, every path resolves
+        (["README.md", "src/cli.py"], "deep", True, EXIT_OK),
+    ],
+)
+def test_depth_status_and_sufficiency_are_different_questions(
+    files_read, status, sufficient, exit_code, capsys, tmp_path
+):
+    """`status` answers "did they read code?"; `sufficient` answers "does this
+    audit meet its obligation?".
+
+    They diverge on a phantom read, and `--require-depth` gates on the second.
+    An earlier README sentence conflated them — this table is what the docs now
+    claim, asserted against the engine.
+    """
+    payload = {
+        "version": 2,
+        "target_kind": "repo",
+        "audit": {"files_read": files_read},
+        "findings": [
+            {
+                "id": "f1",
+                "type": "bug",
+                "title": "t",
+                "path": "src/cli.py:9",
+                "quote": "sub.add_parser('serve')",
+                "target": "code",
+            }
+        ],
+    }
+    findings = tmp_path / "f.json"
+    findings.write_text(json.dumps(payload), encoding="utf-8")
+
+    data = report([str(findings), *ROOT], capsys)
+    assert data["depth"]["status"] == status
+    assert data["depth"]["sufficient"] is sufficient
+    assert run([str(findings), *ROOT, "--require-depth"], capsys)[0] == exit_code
+
+
+def test_the_gating_field_is_published_not_re_derived(capsys):
+    """`--require-depth` acts on `depth.sufficient`, so a consumer must be able
+    to read it rather than reimplement the rule (and get it wrong)."""
+    data = report([SHALLOW, *ROOT], capsys)
+    assert "sufficient" in data["depth"]
+    assert data["depth"]["sufficient"] is False

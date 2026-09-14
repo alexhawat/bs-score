@@ -74,3 +74,55 @@ def test_checklists_exist_for_every_review_type(schema):
     for kind in schema["properties"]["target_kind"]["enum"]:
         name = "pr" if kind == "branch" else kind
         assert (REPO / "checklists" / f"{name}.md").is_file(), kind
+
+
+# A ```console block whose first line is `$ bs-score …` is a claim about output.
+CONSOLE_COMMAND = re.compile(r"^\$\s+bs-score\s+(.*)$")
+
+
+def _console_blocks(text: str) -> list[tuple[str, list[str]]]:
+    """Return ``(args, expected_lines)`` for every ```console block in a document."""
+    blocks: list[tuple[str, list[str]]] = []
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines):
+        if lines[index].strip() == "```console":
+            body: list[str] = []
+            index += 1
+            while index < len(lines) and lines[index].strip() != "```":
+                body.append(lines[index])
+                index += 1
+            if body:
+                match = CONSOLE_COMMAND.match(body[0].strip())
+                if match:
+                    expected = [line for line in body[1:] if line.strip()]
+                    blocks.append((match.group(1), expected))
+        index += 1
+    return blocks
+
+
+@pytest.mark.parametrize("document", MARKDOWN, ids=lambda p: str(p.relative_to(REPO)))
+def test_console_blocks_show_output_the_command_really_produces(document, monkeypatch, capsys):
+    """Run each documented `$ bs-score …` and check the lines under it are real.
+
+    A README once pasted a depth line from one example and a blast-radius line
+    from another, producing output no single run ever emitted. Quoting the tool's
+    output is a claim like any other, so it gets verified like any other.
+    """
+    import shlex
+
+    from bs_score.cli import main as cli_main
+
+    blocks = _console_blocks(document.read_text(encoding="utf-8"))
+    if not blocks:
+        pytest.skip("no console blocks")
+
+    monkeypatch.chdir(REPO)
+    for args, expected in blocks:
+        cli_main([*shlex.split(args), "-q"])
+        actual = capsys.readouterr().out
+        for line in expected:
+            assert line.strip() in actual, (
+                f"{document.relative_to(REPO)}: `bs-score {args}` never prints "
+                f"{line.strip()!r}"
+            )

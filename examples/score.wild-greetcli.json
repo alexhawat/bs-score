@@ -35,6 +35,7 @@
   },
   "depth": {
     "status": "not_required",
+    "sufficient": true,
     "requires_code_pass": false,
     "files_read": 0,
     "code_files_read": 0,

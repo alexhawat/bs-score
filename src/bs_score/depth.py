@@ -51,6 +51,11 @@ class DepthReport:
         """JSON-ready form for the report."""
         payload: dict[str, Any] = {
             "status": self.status,
+            # `status` answers "did they read code?"; `sufficient` answers "does
+            # this audit meet its obligation?". They differ when a listed file
+            # does not exist, and --require-depth gates on the second — so it has
+            # to be readable without re-deriving the rule.
+            "sufficient": self.sufficient,
             "requires_code_pass": self.requires_code_pass,
             "files_read": self.files_read,
             "code_files_read": self.code_files_read,

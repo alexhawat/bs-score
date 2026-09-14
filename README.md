@@ -172,15 +172,26 @@ uv run bs-score examples/findings.blast.json --repo-root examples/fixture-repo -
 ```
 
 For `repo`, `pr`, `branch` and `skill` the report is stamped `shallow` when that
-list holds no implementation file, `unreported` when the block is missing, and
-any path in it that does not exist is flagged — a claimed read of a phantom file
-is itself a false claim, and must not buy a "deep" stamp. `--require-depth`
-turns that into a non-zero exit.
+list holds no implementation file and `unreported` when the block is missing.
 
-```
-- depth: **shallow** — 2 file(s) read, 0 of them implementation (20% of the tree);
-  **1 listed file(s) do not exist**
-- blast radius: 3 file(s) affected across 10 scanned
+A path in the list that does not exist earns **no credit**: it is excluded from
+`files_read`, `code_files_read` and `coverage`, and named in `missing_files`. It
+cannot turn a shallow pass into a deep one on its own — but if the audit also
+read a real implementation file, the `status` under `depth` is still `deep`. The
+field that accounts for the phantom is `sufficient`, and that is what
+`--require-depth` gates on:
+
+| audit block | `status` | `sufficient` | `--require-depth` |
+|---|---|---|---|
+| docs only | `shallow` | `false` | exit 1 |
+| docs + a phantom "code" file | `shallow` | `false` | exit 1 |
+| real code + a phantom file | `deep` | `false` | exit 1 |
+| real code, all paths exist | `deep` | `true` | exit 0 |
+
+```console
+$ bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --format md
+- depth: **shallow** — 2 file(s) read, 0 of them implementation (20% of the tree); **1 listed file(s) do not exist**
+- blast radius: 1 file(s) affected across 10 scanned
 ```
 
 ## Scoring

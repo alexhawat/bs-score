@@ -40,6 +40,12 @@ runtime wrappers people actually install.
   repo extended to carry one root cause worded three ways.
 - `scripts/check_dogfood.py` runs the claims the README makes through the real
   CLI, in CI and in the test suite.
+- `depth.sufficient` in the JSON report — the field `--require-depth` actually
+  gates on. It differs from `depth.status` when a listed file does not exist,
+  and was previously derivable only by reimplementing the rule.
+- Documented `$ bs-score …` console blocks are executed in the test suite and
+  checked against real output, after a README block stitched a depth line from
+  one example to a blast-radius line from another.
 
 ### Changed
 

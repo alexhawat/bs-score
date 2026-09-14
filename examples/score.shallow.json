@@ -35,6 +35,7 @@
   },
   "depth": {
     "status": "shallow",
+    "sufficient": false,
     "requires_code_pass": true,
     "files_read": 2,
     "code_files_read": 0,
