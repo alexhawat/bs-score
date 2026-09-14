@@ -33,3 +33,18 @@ def test_server_construction_needs_the_extra():
     pytest.importorskip("mcp", reason="mcp extra not installed; wrapper-only test")
     server = mcp_server.create_server()
     assert server.name == "bs-score"
+
+
+def test_score_tool_returns_the_same_sections_as_the_cli():
+    """`score_tool` documents itself as returning "the full report".
+
+    It builds the report directly rather than going through the CLI, so a new
+    section wired into `cli.py` and not here would leave the MCP path silently
+    returning less than it claims.
+    """
+    from bs_score.mcp_server import score_tool
+
+    report = score_tool("examples/findings.blast.json", "examples/fixture-repo")
+    assert report["blast_radius"]["mode"] == "scanned"
+    assert report["kept"][0]["files_affected"] == 3
+    assert report["depth"]["status"] == "deep"

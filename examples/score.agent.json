@@ -1,5 +1,5 @@
 {
-  "bs_score_version": "2.1.0",
+  "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
   "score": 6,
   "band": "misleading",
@@ -26,6 +26,22 @@
   "rejected_count": 0,
   "deduped_count": 0,
   "baselined_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 10,
+    "files_affected": [
+      ".cursor/agents/shipper.md"
+    ]
+  },
+  "depth": {
+    "status": "not_required",
+    "sufficient": true,
+    "requires_code_pass": false,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
   "evidence": {
     "mode": "verified",
     "repo_root": "examples/fixture-repo",
@@ -34,13 +50,14 @@
     "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
+    "require_depth": false,
     "by_status": {
       "verified": 2
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
-  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
   "findings_sha256": "ce7d87e66bc04e448afb4318db5075bae71c15ec97ff1fed0092016e1722476b",
   "confidence_affects_score": false,
   "kept": [
@@ -59,7 +76,15 @@
         "status": "verified",
         "resolved": ".cursor/agents/shipper.md"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [
+        {
+          "path": ".cursor/agents/shipper.md",
+          "line": 7
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "ag-contradict-push",
@@ -76,7 +101,15 @@
         "status": "verified",
         "resolved": ".cursor/agents/shipper.md"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [
+        {
+          "path": ".cursor/agents/shipper.md",
+          "line": 12
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     }
   ],
   "rejected": [],

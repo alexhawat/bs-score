@@ -134,6 +134,65 @@ Markdown links, and fenced code blocks are checked deterministically, and
 | **Content-addressed dedupe** | `(type, canonical file, quote fingerprint)` is one finding, whether filed as `src/a.py:10`, `./src/a.py:11`, or copy-pasted into seven files. |
 | **Pinned weights** | Custom weights need `--allow-custom-scoring`; every report carries `scoring_sha256` + `schema_sha256`, and receipts reproduce byte-for-byte in CI. |
 | **Full schema enforcement** | Types, enums, `minLength`, numeric bounds — cross-checked against `jsonschema`; one malformed finding is rejected on its own. |
+| **Root-cause clustering** | Findings sharing a `cluster` id collapse into one charge even when the wording differs in each place, so one defect cannot be filed three ways for triple the points. |
+| **Measured blast radius** | Every verified quote is swept across the tree, so `files_affected` is counted by the scorer rather than claimed by the model. |
+| **Audit-depth check** | `audit.files_read` is checked against the tree: a docs-only pass is stamped `shallow`, and a listed file that does not exist earns no credit. |
+
+## Counting, clustering, and depth
+
+Three things that stop an audit being graded on how hard the model looked.
+
+**The count is measured.** Once a quote is verified, the scorer searches the
+whole tree for it and reports every file it lands in. You file the defect once;
+the report says it is in twenty-six files. Filing it twenty-six times earns
+nothing. The sweep reads tracked text files once — about 1.4s over a 2,300-file
+repository — skips binaries and anything over 1 MB, and caps at 200 occurrences
+per quote. `--no-scan` opts out; `--fold-case` is honoured so the sweep always
+matches the way verification did.
+
+**A root cause is charged once.** The same defect is often worded differently in
+each place, which defeats quote-based dedupe. Give those findings the same
+`cluster` id and they collapse into one scored finding whose blast radius is the
+union of all their quotes:
+
+```bash
+uv run bs-score examples/findings.blast.json --repo-root examples/fixture-repo --format md
+# one root cause reported three ways → 1 finding, 3 points, 3 files affected
+```
+
+**A shallow audit says so.** A payload can carry what it actually opened:
+
+```json
+{
+  "audit": {
+    "files_read": ["README.md", "src/cli.py", "src/api.py"],
+    "notes": "Docs claims plus every module under src/."
+  }
+}
+```
+
+For `repo`, `pr`, `branch` and `skill` the report is stamped `shallow` when that
+list holds no implementation file and `unreported` when the block is missing.
+
+A path in the list that does not exist earns **no credit**: it is excluded from
+`files_read`, `code_files_read` and `coverage`, and named in `missing_files`. It
+cannot turn a shallow pass into a deep one on its own — but if the audit also
+read a real implementation file, the `status` under `depth` is still `deep`. The
+field that accounts for the phantom is `sufficient`, and that is what
+`--require-depth` gates on:
+
+| audit block | `status` | `sufficient` | `--require-depth` |
+|---|---|---|---|
+| docs only | `shallow` | `false` | exit 1 |
+| docs + a phantom "code" file | `shallow` | `false` | exit 1 |
+| real code + a phantom file | `deep` | `false` | exit 1 |
+| real code, all paths exist | `deep` | `true` | exit 0 |
+
+```console
+$ bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --format md
+- depth: **shallow** — 2 file(s) read, 0 of them implementation (20% of the tree); **1 listed file(s) do not exist**
+- blast radius: 1 file(s) affected across 10 scanned
+```
 
 ## Scoring
 
@@ -182,12 +241,17 @@ artifacts the quotes point at live under `examples/`.
 | `findings.i18n.json` | `docs` | **10** | French and Japanese READMEs — quotes verify verbatim in any language |
 | `findings.wild-tinycache.json` | `repo` | **8** | In-the-wild pattern: a 0.9 README promising 1.0 features |
 | `findings.wild-greetcli.json` | `docs` | **10** | In-the-wild pattern: phantom flag, understated Python floor |
+| `findings.blast.json` | `repo` | **5** | One root cause reported three ways — merged, then counted across every file it reaches |
+| `findings.shallow.json` | `repo` | **2** | A docs-only pass that also claims to have read a file that does not exist |
 | `findings.hallucinated.json` | `repo` | **0** | Four confident fabrications, all rejected |
 
 ```bash
 uv run bs-score examples/findings.valid.json  --repo-root examples/fixture-repo
 uv run bs-score examples/findings.docs.json   --repo-root examples/fixture-docs
-uv run bs-score examples/findings.prompt.json --repo-root . --sources examples/fixture-prompts
+uv run bs-score examples/findings.prompt.json --repo-root examples/fixture-prompts \
+    --sources examples/fixture-prompts
+uv run bs-score examples/findings.blast.json  --repo-root examples/fixture-repo
+uv run bs-score examples/findings.shallow.json --repo-root examples/fixture-repo --require-depth
 ```
 
 Each writes the same report as the committed `examples/score.*.json` receipt.
@@ -198,6 +262,7 @@ Details: [`examples/README.md`](examples/README.md).
 ```text
 bs-score FINDINGS [--repo-root DIR] [--sources PATH ...] [--no-verify]
                   [--require-evidence] [--strict-lines] [--line-window N]
+                  [--no-scan] [--require-depth]
                   [--fold-case] [--fail-over N] [--format json|md|sarif]
                   [--baseline FILE] [--write-baseline FILE] [-o FILE]
                   [--scoring FILE --allow-custom-scoring] [-v|-q]
@@ -212,6 +277,8 @@ Highlights:
 | `--sources` | Register non-file evidence (prompt files, review bodies) so their quotes verify too |
 | `--fold-case` | Case-insensitive quote matching (str.casefold); exact is the default |
 | `--fail-over N` | Exit 1 when the score exceeds N — the CI gate |
+| `--require-depth` | Fail when a review type that needs a code pass cannot prove one |
+| `--no-scan` | Skip the blast-radius sweep (the count is then unreported) |
 | `--format sarif` | SARIF 2.1.0 for GitHub code scanning |
 | `--baseline` / `--write-baseline` | Accept known findings once; gate only on new ones |
 | `claims` | LLM-free claim checks on a document; `--emit-findings` for a scorable payload |

@@ -9,3 +9,7 @@ pass has something to verify.
 - Supports OAuth2 login out of the box
 - Real-time streaming endpoint at /v1/stream
 - API key authentication
+
+## Install
+
+Run `demo install --fast` to set everything up.

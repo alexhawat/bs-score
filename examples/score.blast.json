@@ -1,0 +1,180 @@
+{
+  "bs_score_version": "2.2.0",
+  "label": "Bullshit Score",
+  "score": 5,
+  "band": "minor drift",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (one root cause, three wordings)",
+  "profile": "repo",
+  "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
+  "weights": {
+    "breaking_bug": 5,
+    "bug": 3,
+    "missing_feature": 3,
+    "security_issue": 4,
+    "wrong_claim": 2
+  },
+  "by_type": {
+    "missing_feature": 3,
+    "wrong_claim": 2
+  },
+  "count_by_type": {
+    "missing_feature": 1,
+    "wrong_claim": 1
+  },
+  "kept_count": 2,
+  "rejected_count": 0,
+  "deduped_count": 2,
+  "baselined_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 10,
+    "files_affected": [
+      "README.md",
+      "docs/install.md",
+      "docs/quickstart.md",
+      "src/cli.py"
+    ]
+  },
+  "depth": {
+    "status": "deep",
+    "sufficient": true,
+    "requires_code_pass": true,
+    "files_read": 7,
+    "code_files_read": 4,
+    "doc_files_read": 3,
+    "missing_files": [],
+    "tree_files": 10,
+    "coverage": 0.7,
+    "notes": "Docs pass plus a read of every module in src/."
+  },
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-repo",
+    "sources": [],
+    "line_window": 10,
+    "fold_case": false,
+    "require_evidence": false,
+    "strict_lines": false,
+    "require_depth": false,
+    "by_status": {
+      "verified": 4
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
+  "findings_sha256": "e2f20384b97b6b8d59eb1a22260677c4d5546c6a78f1bb260ef99aa5108bd953",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "install-readme",
+      "type": "missing_feature",
+      "title": "Docs advertise a `demo install` subcommand the CLI does not define (3 files)",
+      "path": "README.md:15",
+      "quote": "Run `demo install --fast` to set everything up.",
+      "claim": "`demo install` exists; src/cli.py registers only serve and migrate",
+      "cluster": "phantom-install-subcommand",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "60f569857551214d",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 3,
+      "merged": [
+        {
+          "id": "install-quickstart",
+          "path": "docs/quickstart.md:3"
+        },
+        {
+          "id": "install-docs",
+          "path": "docs/install.md:3"
+        }
+      ],
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 15
+        },
+        {
+          "path": "docs/install.md",
+          "line": 3
+        },
+        {
+          "path": "docs/quickstart.md",
+          "line": 3
+        }
+      ],
+      "occurrence_count": 3,
+      "files_affected": 3
+    },
+    {
+      "id": "cli-proof",
+      "type": "wrong_claim",
+      "title": "CLI registers only serve and migrate",
+      "path": "src/cli.py:9",
+      "quote": "sub.add_parser('serve')",
+      "claim": "The CLI provides the documented install subcommand",
+      "confidence": 0.99,
+      "target": "code",
+      "canonical_file": "src/cli.py",
+      "quote_fingerprint": "edfdf2869009107a",
+      "evidence": {
+        "status": "verified",
+        "resolved": "src/cli.py"
+      },
+      "points": 2,
+      "occurrences": [
+        {
+          "path": "src/cli.py",
+          "line": 9
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    }
+  ],
+  "rejected": [],
+  "deduped": [
+    {
+      "index": 1,
+      "id": "install-quickstart",
+      "reason": "same_root_cause",
+      "merged_into": "install-readme",
+      "finding": {
+        "id": "install-quickstart",
+        "type": "missing_feature",
+        "title": "Quickstart step 1 calls the same missing subcommand",
+        "path": "docs/quickstart.md:3",
+        "quote": "Start with `demo install`, then run the server.",
+        "claim": "`demo install` exists",
+        "cluster": "phantom-install-subcommand",
+        "confidence": 0.9,
+        "target": "other"
+      }
+    },
+    {
+      "index": 2,
+      "id": "install-docs",
+      "reason": "same_root_cause",
+      "merged_into": "install-readme",
+      "finding": {
+        "id": "install-docs",
+        "type": "missing_feature",
+        "title": "Install page describes the same missing subcommand in prose",
+        "path": "docs/install.md:3",
+        "quote": "The installer subcommand handles dependencies for you.",
+        "claim": "`demo install` exists",
+        "cluster": "phantom-install-subcommand",
+        "confidence": 0.85,
+        "target": "other"
+      }
+    }
+  ],
+  "baselined": []
+}

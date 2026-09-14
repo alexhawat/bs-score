@@ -6,7 +6,7 @@
       "tool": {
         "driver": {
           "name": "bs-score",
-          "version": "2.1.0",
+          "version": "2.2.0",
           "informationUri": "https://github.com/alexhawat/bs_score",
           "rules": [
             {
@@ -177,7 +177,7 @@
       "properties": {
         "bs_score": 17,
         "band": "bullshit",
-        "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b"
+        "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff"
       }
     }
   ]

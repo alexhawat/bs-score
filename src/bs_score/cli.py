@@ -31,6 +31,7 @@ from .resources import (
 from .sarif import render_sarif
 from .scoring import ScoringError, load_scoring
 from .sources import SourceError, load_sources
+from .sweep import TreeIndex
 
 EXIT_OK = 0
 EXIT_OVER_THRESHOLD = 1
@@ -51,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  bs-score findings.json                       # verify against the cwd, print JSON\n"
             "  bs-score findings.json --repo-root ../app    # audit another checkout\n"
             "  bs-score findings.json --sources prompts/    # prompt audit\n"
+            "  bs-score findings.json --require-depth        # refuse a docs-only pass\n"
             "  bs-score findings.json --format md --fail-over 10\n"
         ),
     )
@@ -86,6 +88,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict-lines",
         action="store_true",
         help="Reject findings whose quote is real but is not near the stated line",
+    )
+    parser.add_argument(
+        "--no-scan",
+        action="store_true",
+        help=(
+            "Skip the blast-radius sweep. By default every verified quote is searched "
+            "for across the tree, so the occurrence count is measured, not asserted."
+        ),
+    )
+    parser.add_argument(
+        "--require-depth",
+        action="store_true",
+        help=(
+            "Fail when a review type that needs a code pass cannot prove one: no "
+            "audit.files_read block, no implementation file in it, or a listed file "
+            "that does not exist."
+        ),
     )
     parser.add_argument(
         "--line-window",
@@ -226,6 +245,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.require_evidence and args.no_verify:
         logger.error("--require-evidence contradicts --no-verify")
         return EXIT_INVALID
+    if args.require_depth and args.no_verify:
+        logger.error("--require-depth needs a --repo-root to check files_read against")
+        return EXIT_INVALID
 
     try:
         scoring_path = args.scoring or locate(SCORING_FILENAME)
@@ -254,6 +276,9 @@ def main(argv: list[str] | None = None) -> int:
         logger.error(str(exc))
         return EXIT_INVALID
 
+    tree = (
+        TreeIndex(repo_root, fold_case=args.fold_case) if repo_root is not None else None
+    )
     verifier = Verifier(
         repo_root, sources, line_window=args.line_window, fold_case=args.fold_case
     )
@@ -274,6 +299,8 @@ def main(argv: list[str] | None = None) -> int:
     options = Options(
         require_evidence=args.require_evidence,
         strict_lines=args.strict_lines,
+        require_depth=args.require_depth,
+        scan=not args.no_scan,
         fail_over=args.fail_over,
         fold_case=args.fold_case,
         baseline=baseline_keys,
@@ -287,6 +314,7 @@ def main(argv: list[str] | None = None) -> int:
             verifier,
             options,
             findings_sha256=sha256_of_document(payload),
+            tree=tree,
         )
     except PayloadError as exc:
         logger.error("findings payload is unusable: {}", exc)

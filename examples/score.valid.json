@@ -1,5 +1,5 @@
 {
-  "bs_score_version": "2.1.0",
+  "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
   "score": 17,
   "band": "bullshit",
@@ -34,6 +34,28 @@
   "rejected_count": 1,
   "deduped_count": 1,
   "baselined_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 10,
+    "files_affected": [
+      "README.md",
+      "src/api.py",
+      "src/db.py",
+      "src/users.py"
+    ]
+  },
+  "depth": {
+    "status": "deep",
+    "sufficient": true,
+    "requires_code_pass": true,
+    "files_read": 4,
+    "code_files_read": 3,
+    "doc_files_read": 1,
+    "missing_files": [],
+    "tree_files": 10,
+    "coverage": 0.4,
+    "notes": "Docs claims plus a read of every module under src/."
+  },
   "evidence": {
     "mode": "verified",
     "repo_root": "examples/fixture-repo",
@@ -42,14 +64,15 @@
     "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
+    "require_depth": false,
     "by_status": {
       "verified": 6
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
-  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
-  "findings_sha256": "0536c40539f591a107eb492d7097c1f53c811c9d0aadee17b7778756c9b12ba0",
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
+  "findings_sha256": "ea1c0cd99d82b64a7567593a8faa3e119b64805a7f72e86edbff55f689b30146",
   "confidence_affects_score": false,
   "kept": [
     {
@@ -67,7 +90,15 @@
         "status": "verified",
         "resolved": "README.md"
       },
-      "points": 2
+      "points": 2,
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 9
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "f2",
@@ -84,7 +115,15 @@
         "status": "verified",
         "resolved": "README.md"
       },
-      "points": 3
+      "points": 3,
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 10
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "f3",
@@ -101,12 +140,20 @@
         "resolved": "src/api.py"
       },
       "points": 3,
-      "occurrences": [
+      "merged": [
         {
           "id": "f3-dup",
           "path": "./src/api.py:7"
         }
-      ]
+      ],
+      "occurrences": [
+        {
+          "path": "src/api.py",
+          "line": 6
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "f4",
@@ -122,7 +169,15 @@
         "status": "verified",
         "resolved": "src/db.py"
       },
-      "points": 4
+      "points": 4,
+      "occurrences": [
+        {
+          "path": "src/db.py",
+          "line": 6
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     },
     {
       "id": "f5",
@@ -138,7 +193,15 @@
         "status": "verified",
         "resolved": "src/users.py"
       },
-      "points": 5
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "src/users.py",
+          "line": 6
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
     }
   ],
   "rejected": [

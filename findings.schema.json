@@ -22,6 +22,20 @@
       "minLength": 1,
       "description": "Optional locator: repo URL or commit, PR/branch, review id, skill path, agent path, or prompt-set name."
     },
+    "audit": {
+      "type": "object",
+      "description": "Optional proof that the audit went deep. bs-score checks the listed files exist, measures coverage against the tree, and stamps the report 'shallow' when a review type that requires a code pass never read code.",
+      "additionalProperties": false,
+      "required": ["files_read"],
+      "properties": {
+        "files_read": {
+          "type": "array",
+          "description": "Repo-relative paths actually opened during the audit.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    },
     "findings": {
       "type": "array",
       "items": {
@@ -53,6 +67,11 @@
             "type": "string",
             "minLength": 1,
             "description": "Optional: the stated claim being audited."
+          },
+          "cluster": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional root-cause id. Findings sharing (type, cluster) collapse into one scored finding with the rest recorded as merged reports \u2014 so one defect worded several different ways costs its points once."
           },
           "confidence": {
             "type": "number",

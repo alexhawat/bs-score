@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "target_kind": "repo",
+  "target_ref": "examples/fixture-repo (docs-only pass)",
+  "audit": {
+    "files_read": [
+      "README.md",
+      "docs/install.md",
+      "src/does_not_exist.py"
+    ],
+    "notes": "Skimmed the docs."
+  },
+  "findings": [
+    {
+      "id": "s1",
+      "type": "wrong_claim",
+      "title": "README claims OAuth; only API keys exist",
+      "path": "README.md:9",
+      "quote": "Supports OAuth2 login out of the box",
+      "confidence": 0.8,
+      "target": "readme"
+    }
+  ]
+}

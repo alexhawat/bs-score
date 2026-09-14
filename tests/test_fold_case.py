@@ -57,3 +57,43 @@ def test_fingerprints_follow_the_fold(tmp_path, capsys):
     _, report = _run(tmp_path, capsys, "--fold-case")
     expected = locators.quote_fingerprint(PAYLOAD["findings"][0]["quote"], fold_case=True)
     assert report["kept"][0]["quote_fingerprint"] == expected
+
+
+def test_fold_case_reaches_the_blast_radius_sweep(tmp_path, capsys):
+    """A quote that verifies case-insensitively must also be *found* that way.
+
+    The sweep and the verifier normalise independently. If only one of them
+    folds case, a finding verifies and then reports zero occurrences — the
+    scorer contradicting itself inside one report.
+    """
+    import json
+
+    from bs_score.cli import main
+
+    payload = {
+        "version": 2,
+        "target_kind": "repo",
+        "findings": [
+            {
+                "id": "shouty",
+                "type": "wrong_claim",
+                "title": "same claim, different case",
+                "path": "README.md",
+                "quote": "RUN `DEMO INSTALL --FAST` TO SET EVERYTHING UP.",
+                "target": "readme",
+            }
+        ],
+    }
+    findings = tmp_path / "f.json"
+    findings.write_text(json.dumps(payload), encoding="utf-8")
+    args = [str(findings), "--repo-root", "examples/fixture-repo", "-q"]
+
+    assert main([*args, "--fold-case"]) == 0
+    folded = json.loads(capsys.readouterr().out)
+    assert folded["kept_count"] == 1
+    assert folded["kept"][0]["evidence"]["status"] == "verified"
+    assert folded["kept"][0]["files_affected"] == 1, "verified but counted nowhere"
+
+    assert main(args) == 0
+    exact = json.loads(capsys.readouterr().out)
+    assert exact["kept_count"] == 0, "exact matching is still the default"

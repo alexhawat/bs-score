@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bs-score"
-version = "2.1.0"
+version = "2.2.0"
 description = "Bullshit Score: an LLM finds defects with evidence; bs-score verifies the evidence and scores it deterministically."
 readme = "README.md"
 license = { file = "LICENSE" }

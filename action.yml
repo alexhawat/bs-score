@@ -24,6 +24,19 @@ inputs:
     description: Exit 1 when the score exceeds this number (CI gate).
     required: false
     default: ""
+  require-depth:
+    description: >-
+      Fail when a review type that needs a code pass cannot prove one: no
+      audit.files_read block, no implementation file in it, or a listed file
+      that does not exist. Set to "true" to enable.
+    required: false
+    default: ""
+  no-scan:
+    description: >-
+      Set to "true" to skip the blast-radius sweep. The occurrence count is then
+      reported as not_scanned.
+    required: false
+    default: ""
   baseline:
     description: Baseline file of accepted findings; only new findings score.
     required: false
@@ -61,6 +74,8 @@ runs:
         SOURCES: ${{ inputs.sources }}
         FAIL_OVER: ${{ inputs.fail-over }}
         BASELINE: ${{ inputs.baseline }}
+        REQUIRE_DEPTH: ${{ inputs.require-depth }}
+        NO_SCAN: ${{ inputs.no-scan }}
         FORMAT: ${{ inputs.format }}
         REF: ${{ inputs.ref }}
       run: |
@@ -69,6 +84,8 @@ runs:
         for src in $SOURCES; do args+=(--sources "$src"); done
         [ -n "$FAIL_OVER" ] && args+=(--fail-over "$FAIL_OVER")
         [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
+        [ "$REQUIRE_DEPTH" = true ] && args+=(--require-depth)
+        [ "$NO_SCAN" = true ] && args+=(--no-scan)
         # report.json is always written so score/band outputs work in every
         # format; the requested format gets its own artifact when it differs.
         uvx --from "git+https://github.com/alexhawat/bs_score@${REF}" bs-score \

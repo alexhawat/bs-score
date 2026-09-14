@@ -4,6 +4,66 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-09-14
+
+Stops the score depending on how hard the model looked. Prompted by an audit of
+PR #2 that reported one dead install command as three findings and implied that
+was the inventory — it was in 26 places across 21 files, including all seven
+runtime wrappers people actually install.
+
+### Added
+
+- **Measured blast radius.** Every verified quote is swept across the tree and
+  the report says which files carry it: `files_affected`, `occurrences` with
+  line numbers, and a top-level `blast_radius`. The score is unchanged — a
+  defect is charged once — but the count is a measurement instead of a claim,
+  so undercounting is no longer possible and re-filing earns nothing. One pass
+  over the tree, roughly 1.4s for 2,300 files. `--no-scan` opts out, and the
+  sweep honours `--fold-case` so it always matches the way verification did.
+- **Root-cause clustering.** An optional `cluster` id on a finding collapses
+  same-cause findings into one charge even when the wording differs in each
+  place, which quote-identical dedupe could never do — that is exactly how one
+  root cause scored three times. A cluster's blast radius is the union of its
+  members' quotes.
+- **Audit-depth checking.** A payload can carry `audit.files_read`. For `repo`,
+  `pr`, `branch` and `skill` the report is stamped `shallow` when that list
+  holds no implementation file and `unreported` when the block is absent; a
+  listed path that does not exist earns no depth credit and is reported as a
+  phantom read. `--require-depth` turns an insufficient audit into a non-zero
+  exit. "Docs-only is incomplete" had been in `SKILL.md` since v1 with nothing
+  enforcing it.
+- `checklists/README.md` documents two failure modes that apply to every review
+  type: **hollow verification** (a verb of proof with nothing behind it — the
+  defect a PR #2 audit found in this project's own tests) and **counting by
+  hand** (sweep before you file).
+- `examples/findings.blast.json` and `findings.shallow.json`, with the fixture
+  repo extended to carry one root cause worded three ways.
+- `scripts/check_dogfood.py` runs the claims the README makes through the real
+  CLI, in CI and in the test suite.
+- `depth.sufficient` in the JSON report — the field `--require-depth` actually
+  gates on. It differs from `depth.status` when a listed file does not exist,
+  and was previously derivable only by reimplementing the rule.
+- Documented `$ bs-score …` console blocks are executed in the test suite and
+  checked against real output, after a README block stitched a depth line from
+  one example to a blast-radius line from another.
+
+### Changed
+
+- **Breaking — `occurrences` changed meaning.** On a kept finding it now lists
+  where the scorer *found* the quote, as `{path, line}` objects. The reports
+  merged into it by dedupe — what `occurrences` used to hold — moved to
+  `merged`. Anything reading `occurrences` as "how many duplicates were filed"
+  reads a different thing now, and gets objects where it expected `{id, path}`.
+  Nothing in this repository depends on the old shape: `baseline.py` keys on
+  `(type, canonical_file, quote_fingerprint)` and is unaffected.
+- The Markdown renderer gained a `files` column and depth / blast-radius lines.
+- The `prompt` example scores against `examples/fixture-prompts` rather than the
+  repository root, so its receipt does not change every time the repo gains a
+  file; the self-audit runs with `--no-scan` for the same reason.
+- `test_documented_flags_exist` inspects only fenced code blocks, and only the
+  part of a line after the command name, so a flag invented for bs-score cannot
+  hide beside a real `uvx --from` or `rg --fixed-strings`.
+
 ## [2.1.0] - 2026-09-13
 
 Wrong info gets its own review type, and the mechanical slice of it no longer

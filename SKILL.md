@@ -62,8 +62,13 @@ Per-runtime wrappers: [`agents/`](agents/).
   appear in the artifact (whitespace- and typography-normalised). If it does not:
   `rejected`, not scored.
 - **Dedupe key: `(type, canonical file, quote fingerprint)`.** Line numbers,
-  `./` prefixes and re-paths do not create new findings. The same quoted line in
-  seven files is one finding with seven `occurrences`.
+  `./` prefixes and re-paths do not create new findings.
+- **One root cause is charged once.** Give findings that share a cause the same
+  `cluster` id and they collapse into one scored finding — even when the wording
+  differs in each place. Their blast radius is the union of all their quotes.
+- **The count is measured, not asserted.** Every verified quote is swept across
+  the tree, and the report says how many files carry it. You do not need to
+  enumerate them, and filing them separately earns nothing extra.
 - `confidence` is **display-only** (0–1); it never changes points.
 - A malformed finding is rejected on its own. Only a malformed envelope
   (`version`, `target_kind`, `findings`) aborts the run.
@@ -94,9 +99,17 @@ Per-runtime wrappers: [`agents/`](agents/).
 4. **Quote exactly.** Copy the evidence verbatim from the file. One contiguous
    run of text — never stitch two places together with `...`, because a stitched
    quote cannot be verified and will be rejected.
-5. **Emit findings JSON only** — matching `findings.schema.json`, with no
+5. **Group by cause, not by location.** Before filing a second finding, ask
+   whether it is the same defect somewhere else. If it is, give both the same
+   `cluster` id; the scorer charges the cause once and reports every file it
+   reaches. Two defects that merely look alike get different clusters.
+6. **Record what you read.** Add an `audit.files_read` list. For `repo`, `pr`,
+   `branch` and `skill` the scorer stamps the report `shallow` when that list
+   contains no implementation file, and flags any path in it that does not
+   exist. `--require-depth` turns that into a failure.
+7. **Emit findings JSON only** — matching `findings.schema.json`, with no
    `score` and no `points`.
-6. **Score it:**
+8. **Score it:**
 
 ```bash
 bs-score findings.json --repo-root .        # installed
@@ -114,9 +127,10 @@ bs-score findings.json --repo-root . --sources review.json  # {id, text} manifes
 
 Install options are in the [README](README.md).
 
-7. **Report only what the script printed**: `score`, `by_type`, `kept` /
-   `rejected` / `deduped`, and the paths of the kept findings. `--format md`
-   prints a summary you can paste as-is.
+9. **Report only what the script printed**: `score`, `by_type`, `kept` /
+   `rejected` / `deduped`, `depth`, and `blast_radius`. `--format md` prints a
+   summary you can paste as-is. If the report says `depth: shallow` or
+   `unreported`, say so — do not present the score as a finished audit.
 
 If `rejected` contains `unverified_evidence`, you mis-quoted or invented
 something — fix the quote and re-run rather than reporting the lower score as a
@@ -127,6 +141,10 @@ you are not done: go back to step 2.
 
 Required: `id`, `type`, `title`, `path`, `quote`, `target`.
 Optional: `claim`, `confidence`.
+
+Optional `cluster`: a short id shared by every finding with the same root cause
+(`phantom-install-subcommand`). Findings sharing `(type, cluster)` are scored
+once.
 
 `target` — where the quote lives:
 `readme` | `code` | `diff` | `review` | `skill` | `agent` | `prompt` | `other`.
@@ -144,6 +162,24 @@ Line numbers are checked with ±10 lines of slack and are advisory: a real quote
 at a wrong line is kept and flagged `verified_wrong_line` (and rejected under
 `--strict-lines`). A quote that is nowhere in the artifact is always rejected.
 
+## Audit block
+
+Optional, but it is the only way to show the deep pass happened:
+
+```json
+{
+  "version": 2,
+  "target_kind": "repo",
+  "audit": {
+    "files_read": ["README.md", "src/cli.py", "src/api.py"],
+    "notes": "Docs claims plus every module under src/."
+  },
+  "findings": []
+}
+```
+
+A path that does not exist earns no credit and is reported as a phantom read.
+
 ## Hard rules
 
 - Do not add finding types that are absent from `scoring.json`.
@@ -157,8 +193,13 @@ at a wrong line is kept and flagged `verified_wrong_line` (and rejected under
 - Do not treat rejected findings as scored.
 - Prefer fewer high-evidence findings over speculative noise — but a docs-only
   audit is **incomplete** for `repo` / `pr` / `branch` / `skill`.
-- One finding per failure mode. Re-filing the same quote at another path adds
-  an `occurrence`, not points — say "7 files" in the title instead.
+- One finding per failure mode. Re-filing the same quote at another path is
+  merged, not scored. Use `cluster` when the wording differs between places.
+- Never claim a count you did not measure. The scorer reports `files_affected`;
+  quote that number rather than inventing one.
+- Never write a title or `claim` that asserts more than the quote shows. "I
+  verified X" with nothing checking X is the hollow-verification failure mode,
+  and it is a `missing_feature` when you find it in someone else's work.
 - For `review`: never score a finding the review got right.
 - For `skill` / `agent` / `prompt`: read the text **and** the code, config, or
   tool list it depends on.

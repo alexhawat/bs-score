@@ -1,5 +1,5 @@
 {
-  "bs_score_version": "2.1.0",
+  "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
   "score": 0,
   "band": "clean",
@@ -22,6 +22,20 @@
   "rejected_count": 8,
   "deduped_count": 0,
   "baselined_count": 0,
+  "blast_radius": {
+    "mode": "not_scanned",
+    "tree_files": null,
+    "files_affected": []
+  },
+  "depth": {
+    "status": "unreported",
+    "sufficient": false,
+    "requires_code_pass": true,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
   "evidence": {
     "mode": "verified",
     "repo_root": ".",
@@ -30,13 +44,14 @@
     "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
+    "require_depth": false,
     "by_status": {
       "quote_not_found": 8
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
-  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
   "findings_sha256": "581e72adf08bc6db22e3b83d83cea40f94b4bc5ec77532669436e8108a0c290d",
   "confidence_affects_score": false,
   "kept": [],
