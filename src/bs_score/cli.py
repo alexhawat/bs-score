@@ -321,7 +321,7 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INVALID
 
     if args.write_baseline:
-        write_baseline(args.write_baseline, report["kept"])
+        write_baseline(args.write_baseline, report)
 
     if args.format == "md":
         text = render_markdown(report)

@@ -56,30 +56,41 @@ def load_baseline(path: Path) -> frozenset[tuple[str, str, str]]:
     return frozenset(keys)
 
 
-def render_baseline(kept: list[dict[str, Any]]) -> dict[str, Any]:
-    """Build the baseline document for a report's kept findings."""
-    return {
-        "version": BASELINE_VERSION,
-        "findings": [
-            {
-                "type": finding["type"],
-                "file": finding["canonical_file"],
-                "quote_fingerprint": finding["quote_fingerprint"],
-                "title": finding["title"],
-            }
-            for finding in kept
-        ],
-    }
+def render_baseline(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build the baseline document for a report's accepted findings.
+
+    Entries are deduped by match key: findings already covered by a baseline skip
+    the dedupe pass (they are never registered as a merge target), so the same
+    defect can arrive here more than once.
+    """
+    entries: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for finding in findings:
+        entry = {
+            "type": finding["type"],
+            "file": finding["canonical_file"],
+            "quote_fingerprint": finding["quote_fingerprint"],
+            "title": finding["title"],
+        }
+        entries.setdefault(key_of(finding), entry)
+    return {"version": BASELINE_VERSION, "findings": list(entries.values())}
 
 
-def write_baseline(path: Path, kept: list[dict[str, Any]]) -> None:
-    """Write the baseline for ``kept`` to ``path``."""
+def write_baseline(path: Path, report: dict[str, Any]) -> None:
+    """Write a baseline covering everything ``report`` accepted.
+
+    Both ``kept`` and ``baselined`` go in. Writing only ``kept`` loses every
+    finding the run's own ``--baseline`` suppressed, so the obvious
+    ``--baseline b.json --write-baseline b.json`` refresh emptied the file and
+    the next run scored the lot again.
+    """
+    findings = [*report["kept"], *report["baselined"]]
     path.parent.mkdir(parents=True, exist_ok=True)
+    document = render_baseline(findings)
     path.write_text(
-        json.dumps(render_baseline(kept), indent=2, ensure_ascii=False) + "\n",
+        json.dumps(document, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    logger.info("wrote baseline with {} finding(s) to {}", len(kept), path)
+    logger.info("wrote baseline with {} finding(s) to {}", len(document["findings"]), path)
 
 
 __all__ = [

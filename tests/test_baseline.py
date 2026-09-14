@@ -84,3 +84,37 @@ def test_render_baseline_round_trip():
     document = render_baseline(kept)
     assert document["version"] == 1
     assert document["findings"][0]["file"] == "src/api.py"
+
+
+def test_refreshing_a_baseline_in_place_keeps_it(tmp_path, capsys):
+    """`--baseline b --write-baseline b` used to truncate b to nothing.
+
+    Baselined findings are not in ``kept``, and only ``kept`` was written, so the
+    obvious way to refresh a baseline emptied it and the next run scored every
+    finding again.
+    """
+    baseline = tmp_path / "b.json"
+    _run([VALID, *ROOT, "--write-baseline", str(baseline)], capsys)
+    before = json.loads(baseline.read_text())["findings"]
+    assert before
+
+    _run([VALID, *ROOT, "--baseline", str(baseline), "--write-baseline", str(baseline)], capsys)
+    after = json.loads(baseline.read_text())["findings"]
+    assert {tuple(sorted(e.items())) for e in after} == {
+        tuple(sorted(e.items())) for e in before
+    }
+
+    # And it still suppresses on the next run.
+    _, report = _run([VALID, *ROOT, "--baseline", str(baseline)], capsys)
+    assert report["score"] == 0
+
+
+def test_render_baseline_dedupes_repeated_entries():
+    """Baselined findings skip dedupe, so the same key can arrive twice."""
+    entry = {
+        "type": "bug",
+        "canonical_file": "src/api.py",
+        "quote_fingerprint": "abc123",
+        "title": "t",
+    }
+    assert len(render_baseline([entry, dict(entry), entry])["findings"]) == 1
