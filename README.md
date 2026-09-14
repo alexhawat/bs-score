@@ -12,6 +12,35 @@ every quote against the artifact it names*, then scores what survived. Higher =
 more bullshit. A fabricated audit scores **0**, because none of its quotes
 exist.
 
+## Use with your agent — one line
+
+Paste this into your Claude, Cursor, Grok , Grok bot, Opencode, chatgpt agents:
+
+```text
+Add the bs_score skill from https://github.com/alexhawat/bs_score and learn how to use it. 
+```
+
+Or wire it up per runtime:
+
+| Runtime | One-line setup |
+|---------|----------------|
+| Claude Code | `git clone https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score` |
+| Cursor | Clone anywhere, then `@` the root `SKILL.md` — or copy `agents/cursor/` into your skills path |
+| Codex | Append the root `SKILL.md` to your `AGENTS.md` |
+| Grok | Attach the root `SKILL.md` as the bot skill, or copy `agents/grok/` |
+| Hermes | Register `agents/hermes/` as a skill, or load the root `SKILL.md` |
+| OpenClaw | Register `agents/openclaw/` as a skill, or load the root `SKILL.md` |
+| OpenCode | Register `agents/opencode/` as a skill, or load the root `SKILL.md` |
+| **Any agent** | The paste line above — anything that can follow a skill file and run a command works |
+
+Either way the agent needs the `bs-score` CLI at scoring time; the git one-liner
+covers that. The PyPI release will make the scorer plain `uvx bs-score`,
+no clone at all.
+
+LLM-facing context files: [`llms.txt`](llms.txt) (index) and
+[`llms-full.txt`](llms-full.txt) (the whole recipe, weights, and schema in one
+fetch).
+
 ## 30-second demo
 
 ```bash
@@ -64,34 +93,7 @@ not scored — four confident fabrications add up to zero.
 
 </details>
 
-## Use with your agent — one line
 
-Paste this into your agent:
-
-```text
-Add the bs_score skill from https://github.com/alexhawat/bs_score and verify it by auditing this repo.
-```
-
-Or wire it up per runtime:
-
-| Runtime | One-line setup |
-|---------|----------------|
-| Claude Code | `git clone https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score` |
-| Cursor | Clone anywhere, then `@` the root `SKILL.md` — or copy `agents/cursor/` into your skills path |
-| Codex | Append the root `SKILL.md` to your `AGENTS.md` |
-| Grok | Attach the root `SKILL.md` as the bot skill, or copy `agents/grok/` |
-| Hermes | Register `agents/hermes/` as a skill, or load the root `SKILL.md` |
-| OpenClaw | Register `agents/openclaw/` as a skill, or load the root `SKILL.md` |
-| OpenCode | Register `agents/opencode/` as a skill, or load the root `SKILL.md` |
-| **Any agent** | The paste line above — anything that can follow a skill file and run a command works |
-
-Either way the agent needs the `bs-score` CLI at scoring time; the git one-liner
-covers that. The PyPI release will make the scorer plain `uvx bs-score`,
-no clone at all.
-
-LLM-facing context files: [`llms.txt`](llms.txt) (index) and
-[`llms-full.txt`](llms-full.txt) (the whole recipe, weights, and schema in one
-fetch).
 
 ## What it catches
 
