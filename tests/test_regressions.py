@@ -38,7 +38,7 @@ def test_wrapper_documents_a_clone_local_command(agent_dir):
 
 
 # Since v2.0.0 the default branch carries pyproject.toml, so the one-line
-# install `uvx --from git+https://github.com/alexhawat/bs_score bs-score` is a
+# install `uvx --from git+https://github.com/alexhawat/bs-score bs-score` is a
 # true claim. What would be a false claim is `uvx bs-score` (no --from), which
 # needs the PyPI release. The uvx-install CI job proves both directions by
 # running the real command against the commit under test.
@@ -69,7 +69,7 @@ def test_docs_never_print_an_unreleased_pypi_install(document):
 def test_readme_prints_the_one_line_install():
     """The one-line install must be exactly the command CI proves installable."""
     readme = (REPO / "README.md").read_text(encoding="utf-8")
-    assert "uvx --from git+https://github.com/alexhawat/bs_score bs-score" in readme
+    assert "uvx --from git+https://github.com/alexhawat/bs-score bs-score" in readme
 
 
 def test_the_console_script_the_docs_tell_you_to_run_exists():
@@ -303,7 +303,7 @@ def test_duplicate_ids_are_rejected_individually():
 
 
 def test_schema_id_points_at_this_repository(schema):
-    assert "alexhawat/bs_score" in schema["$id"]
+    assert "alexhawat/bs-score" in schema["$id"]
     assert "bots-agents-skills" not in schema["$id"]
 
 

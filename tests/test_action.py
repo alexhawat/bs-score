@@ -44,14 +44,14 @@ def test_readme_action_example_uses_declared_inputs():
     # Every `with:` key printed in the README workflow snippet must exist.
     import re
 
-    snippet = re.search(r"uses: alexhawat/bs_score@main\n(.*?)\n```", readme, re.DOTALL)
+    snippet = re.search(r"uses: alexhawat/bs-score@main\n(.*?)\n```", readme, re.DOTALL)
     assert snippet, "README is missing the action example"
     used = set(re.findall(r"^\s{4,}(\w[\w-]*):", snippet.group(1), re.MULTILINE)) - {"with"}
     assert used <= declared, f"README uses undeclared input(s): {sorted(used - declared)}"
 
 
 def test_the_scorer_ref_defaults_to_the_actions_own_ref():
-    """`uses: alexhawat/bs_score@<sha>` must pin the scorer to that sha too.
+    """`uses: alexhawat/bs-score@<sha>` must pin the scorer to that sha too.
 
     `ref` defaulted to `main`, so a pinned action still installed whatever main
     happened to be — the action was pinned and the code it ran was not.

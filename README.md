@@ -1,6 +1,6 @@
 # bs-score
 
-[![ci](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml/badge.svg)](https://github.com/alexhawat/bs_score/actions/workflows/ci.yml)
+[![ci](https://github.com/alexhawat/bs-score/actions/workflows/ci.yml/badge.svg)](https://github.com/alexhawat/bs-score/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 
@@ -19,7 +19,7 @@ command** (what verifies and scores what it emits).
 **1. The command** — one line, every runtime:
 
 ```bash
-uv tool install git+https://github.com/alexhawat/bs_score   # puts bs-score on PATH
+uv tool install git+https://github.com/alexhawat/bs-score   # puts bs-score on PATH
 ```
 
 **2. The skill** — clone this repository into your runtime's skills folder, so
@@ -27,7 +27,7 @@ the root `SKILL.md` and the `checklists/` it links to land together. The folder
 name is the skill's name, so keep it `bs-score`:
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs-score
+git clone --depth 1 https://github.com/alexhawat/bs-score ~/.claude/skills/bs-score
 ```
 
 | Runtime | Personal (every project) | Project (checked in) |
@@ -49,13 +49,13 @@ elsewhere; they point back at the root `SKILL.md` rather than duplicating it.
 Or skip all of it and paste this at your agent:
 
 ```text
-Add the bs-score skill from https://github.com/alexhawat/bs_score and learn how to use it.
+Add the bs-score skill from https://github.com/alexhawat/bs-score and learn how to use it.
 ```
 
 <details>
 <summary>Other ways to get the command</summary>
 
-- `uvx --from git+https://github.com/alexhawat/bs_score bs-score …` — no install,
+- `uvx --from git+https://github.com/alexhawat/bs-score bs-score …` — no install,
   resolved per run. CI runs that exact command against every commit
   (`uvx-install` job), so it is proven, not promised.
 - From a clone: `uv sync`, then `uv run bs-score …` — or `python3 score.py …`,
@@ -72,7 +72,7 @@ fetch).
 ## 30-second demo
 
 An auditor that made everything up, scored from a clone
-(`git clone https://github.com/alexhawat/bs_score bs-score && cd bs-score && uv sync`):
+(`git clone https://github.com/alexhawat/bs-score bs-score && cd bs-score && uv sync`):
 
 ```console
 $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
@@ -84,7 +84,7 @@ $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 - evidence: verified (path_not_found 1, quote_not_found 3)
 - depth: **unreported** — no `audit.files_read` block, so depth is unverifiable
 - blast radius: 0 file(s) affected across 10 scanned
-- scoring `30ad8b532c34` · schema `991705a46093`
+- scoring `30ad8b532c34` · schema `749e202f7380`
 
 ### Rejected (not scored)
 
@@ -236,7 +236,7 @@ Exit codes: `0` scored and within threshold · `1` over `--fail-over` (or
 **GitHub Action** (composite, [`action.yml`](action.yml)):
 
 ```yaml
-- uses: alexhawat/bs_score@main
+- uses: alexhawat/bs-score@main
   with:
     findings: findings.json
     fail-over: "10"

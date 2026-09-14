@@ -27,7 +27,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 from bs_score.cli import build_claims_parser, build_parser  # noqa: E402
 
-RAW = "https://raw.githubusercontent.com/alexhawat/bs_score/main"
+RAW = "https://raw.githubusercontent.com/alexhawat/bs-score/main"
 
 PITCH = (
     "Your AI auditor lies. bs-score catches it — every claim is quoted, every "
@@ -37,7 +37,7 @@ PITCH = (
     "bullshit."
 )
 
-INSTALL = "uvx --from git+https://github.com/alexhawat/bs_score bs-score --help"
+INSTALL = "uvx --from git+https://github.com/alexhawat/bs-score bs-score --help"
 
 
 def weight_table(scoring: dict) -> str:

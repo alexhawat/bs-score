@@ -2,7 +2,7 @@
 
 Your AI auditor lies. bs-score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
 
-Install (no clone): `uvx --from git+https://github.com/alexhawat/bs_score bs-score --help`
+Install (no clone): `uvx --from git+https://github.com/alexhawat/bs-score bs-score --help`
 
 Everything below is generated from the canonical sources by
 scripts/gen_llms_txt.py; CI fails if it drifts.
@@ -53,7 +53,7 @@ bs-score/
 └── examples/             # worked findings + receipts + fixture artifacts
 ```
 
-Canonical publish: [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
+Canonical publish: [alexhawat/bs-score](https://github.com/alexhawat/bs-score).
 Per-runtime wrappers: [`agents/`](agents/).
 
 ## Score rules (locked)

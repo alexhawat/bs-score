@@ -17,7 +17,7 @@ def test_llms_files_are_up_to_date():
 def test_llms_txt_follows_the_llmstxt_shape():
     text = (REPO / "llms.txt").read_text(encoding="utf-8")
     assert text.startswith("# bs-score\n\n> ")
-    assert "uvx --from git+https://github.com/alexhawat/bs_score bs-score" in text
+    assert "uvx --from git+https://github.com/alexhawat/bs-score bs-score" in text
     for name in ("SKILL.md", "findings.schema.json", "scoring.json", "checklists/", "examples"):
         assert name in text
 

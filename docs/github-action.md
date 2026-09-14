@@ -3,7 +3,7 @@
 The composite action is [`action.yml`](../action.yml). Minimum usage:
 
 ```yaml
-- uses: alexhawat/bs_score@main
+- uses: alexhawat/bs-score@main
   with:
     findings: findings.json
     fail-over: "10"
@@ -17,7 +17,7 @@ defaults to the ref the action itself was resolved at, so pinning the action
 pins the scorer with it:
 
 ```yaml
-- uses: alexhawat/bs_score@8f0c1d2   # the scorer is installed from 8f0c1d2 too
+- uses: alexhawat/bs-score@8f0c1d2   # the scorer is installed from 8f0c1d2 too
 ```
 
 Set it explicitly only to run a different revision of the scorer than the
@@ -27,7 +27,7 @@ action. It falls back to `main` when the action runs from a local path
 ## Post the Markdown report as a PR comment
 
 ```yaml
-- uses: alexhawat/bs_score@main
+- uses: alexhawat/bs-score@main
   with: { findings: findings.json, format: md }
 - uses: actions/github-script@v7
   if: always()
@@ -44,7 +44,7 @@ action. It falls back to `main` when the action runs from a local path
 ## Upload findings to code scanning
 
 ```yaml
-- uses: alexhawat/bs_score@main
+- uses: alexhawat/bs-score@main
   with: { findings: findings.json, format: sarif }
 - uses: github/codeql-action/upload-sarif@v3
   with: { sarif_file: report.sarif }
