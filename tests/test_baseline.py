@@ -31,9 +31,11 @@ def test_write_then_baseline_scores_only_new_findings(tmp_path, capsys):
     assert report["score"] == 0
     assert report["band"] == "clean"
     assert report["kept_count"] == 0
-    # f3-dup no longer merges into f3 (baselined findings don't register dedupe
-    # keys), so it is baselined on its own identical key.
-    assert report["baselined_count"] == 6
+    # Dedupe still applies: f3-dup merges into f3, which is baselined. The
+    # accepted set is the same five findings a scoring run keeps.
+    assert report["baselined_count"] == 5
+    assert report["deduped_count"] == 1
+    assert report["deduped"][0]["merged_into_bucket"] == "baselined"
 
     # One new finding on top of the baseline scores on its own.
     payload = json.loads((EXAMPLES / "findings.valid.json").read_text())
@@ -52,7 +54,7 @@ def test_write_then_baseline_scores_only_new_findings(tmp_path, capsys):
     _, report = _run([str(findings), *ROOT, "--baseline", str(baseline)], capsys)
     assert report["score"] == 2
     assert report["kept_count"] == 1
-    assert report["baselined_count"] == 6
+    assert report["baselined_count"] == 5
 
 
 def test_fail_over_gates_on_new_findings_only(tmp_path, capsys):
@@ -84,3 +86,37 @@ def test_render_baseline_round_trip():
     document = render_baseline(kept)
     assert document["version"] == 1
     assert document["findings"][0]["file"] == "src/api.py"
+
+
+def test_refreshing_a_baseline_in_place_keeps_it(tmp_path, capsys):
+    """`--baseline b --write-baseline b` used to truncate b to nothing.
+
+    Baselined findings are not in ``kept``, and only ``kept`` was written, so the
+    obvious way to refresh a baseline emptied it and the next run scored every
+    finding again.
+    """
+    baseline = tmp_path / "b.json"
+    _run([VALID, *ROOT, "--write-baseline", str(baseline)], capsys)
+    before = json.loads(baseline.read_text())["findings"]
+    assert before
+
+    _run([VALID, *ROOT, "--baseline", str(baseline), "--write-baseline", str(baseline)], capsys)
+    after = json.loads(baseline.read_text())["findings"]
+    assert {tuple(sorted(e.items())) for e in after} == {
+        tuple(sorted(e.items())) for e in before
+    }
+
+    # And it still suppresses on the next run.
+    _, report = _run([VALID, *ROOT, "--baseline", str(baseline)], capsys)
+    assert report["score"] == 0
+
+
+def test_render_baseline_dedupes_repeated_entries():
+    """Baselined findings skip dedupe, so the same key can arrive twice."""
+    entry = {
+        "type": "bug",
+        "canonical_file": "src/api.py",
+        "quote_fingerprint": "abc123",
+        "title": "t",
+    }
+    assert len(render_baseline([entry, dict(entry), entry])["findings"]) == 1

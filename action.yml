@@ -46,9 +46,13 @@ inputs:
     required: false
     default: json
   ref:
-    description: Git ref of alexhawat/bs_score to run (tag, branch, or sha).
+    description: >-
+      Git ref of alexhawat/bs_score the scorer is installed from (tag, branch,
+      or sha). Defaults to the ref this action was resolved at, so pinning
+      `uses: alexhawat/bs_score@<sha>` pins the scorer to the same commit.
+      Falls back to main only when that is unavailable (a local `uses: ./`).
     required: false
-    default: main
+    default: ""
 
 outputs:
   score:
@@ -78,8 +82,12 @@ runs:
         NO_SCAN: ${{ inputs.no-scan }}
         FORMAT: ${{ inputs.format }}
         REF: ${{ inputs.ref }}
+        ACTION_REF: ${{ github.action_ref }}
       run: |
         set -uo pipefail
+        # Pinning the action has to pin the scorer too: a default of `main`
+        # meant `uses: alexhawat/bs_score@v1.2.3` still installed main's code.
+        REF="${REF:-${ACTION_REF:-main}}"
         args=("$FINDINGS" --repo-root "$REPO_ROOT" -q)
         for src in $SOURCES; do args+=(--sources "$src"); done
         [ -n "$FAIL_OVER" ] && args+=(--fail-over "$FAIL_OVER")

@@ -39,7 +39,7 @@ flag never mentioned, and a real line attributed to the wrong file. It scores
 **`findings.self.json`** is the v1 audit of *this* repository — the eight defects
 that v2 fixed. Every quote is now gone, so it scores **0** too. It is kept as a
 regression gate: reintroduce one of those defects and its quote verifies again,
-the score rises, and `--fail-over 0` fails CI.
+the score rises, and `scripts/check_dogfood.py` fails CI.
 
 ## Repo/PR audits
 

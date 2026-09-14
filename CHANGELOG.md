@@ -4,6 +4,44 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`--write-baseline` writes everything the run accepted**, `kept` *and*
+  `baselined`. It wrote only `kept`, so `--baseline b.json --write-baseline
+  b.json` — the obvious way to refresh a baseline — truncated the file to
+  nothing and the next run scored every finding again.
+- **Dedupe applies under a baseline.** Merge targets were registered only for
+  `kept`, so a payload that reports `kept 5 · deduped 1` reported
+  `baselined 6` when a baseline covered it. `deduped` entries gained
+  `merged_into_bucket`, naming which list the duplicate merged into.
+- **The Action pins the scorer to its own ref.** `ref` defaulted to `main`, so
+  `uses: alexhawat/bs_score@<sha>` ran that sha's `action.yml` and installed
+  whatever `main` happened to be. It now defaults to `github.action_ref`.
+- **`-q` keeps errors.** It removed every log sink, so an unusable payload
+  exited 2 having printed nothing — and `-q` is what `action.yml` passes.
+  Quiet now means ERROR and above; stdout is unchanged.
+- **`claims` false positives.** `check_flags` matched `\s+` between tokens,
+  which crosses newlines, so a flag on the next line was attributed to the
+  previous line's command; `_check_anchor` counted `##` lines inside fenced
+  code blocks as headings, resolving dead anchors.
+- **The depth check no longer forces a full content index.** `paths()` read and
+  NFKC-normalised every file to answer which paths exist — most of the cost of
+  a `--no-scan` run. Split into a scan (stat plus an 8 KiB binary sniff) and
+  the normalised index the sweep builds on demand.
+- **Install paths per runtime** in the README and the generated wrappers, for
+  both user and project scope, plus the `uv tool install` line that actually
+  puts `bs-score` on `PATH`. Cloning into a skills folder never did.
+- **Docs quoting output no runs produced.** Both README demo blocks showed
+  invented tables; the console-block test only matched a bare `$ bs-score` and
+  both were spelled `$ uv run bs-score`. The link test dropped `#anchor` before
+  resolving, so fifteen files pointed at a `#install` section that never
+  existed. Both guards are fixed and the blocks are live output.
+- `.pre-commit-hooks.yaml` documented a `rev:` pinned to a release tag this repo
+  has never had, and no `files:` filter — so pre-commit handed the hook every
+  staged JSON and it failed with "unrecognized arguments".
+
 ## [2.2.0] - 2026-09-14
 
 Stops the score depending on how hard the model looked. Prompted by an audit of

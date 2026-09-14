@@ -220,8 +220,11 @@ def check_flags(text: str, facts: ProjectFacts) -> list[Claim]:
         if name not in facts.flags:
             continue
         known = facts.flags[name]
+        # Horizontal whitespace only: `\s+` crossed newlines, so a flag belonging
+        # to the next line's command was reported as this one's — a false
+        # `wrong_claim` that --emit-findings would hand straight to the scorer.
         for match in re.finditer(
-            rf"(?<![\w./-]){re.escape(name)}((?:\s+[^\s`|&;]+)*)", text
+            rf"(?<![\w./-]){re.escape(name)}((?:[ \t]+[^\s`|&;]+)*)", text
         ):
             invocation = match.group(0)
             for flag in FLAG.findall(invocation):
@@ -304,9 +307,26 @@ def check_links(
     return claims
 
 
+def _headings(text: str) -> list[str]:
+    """Headings outside fenced code blocks.
+
+    A `## Bullshit Score: **17**` line inside a ```console block is tool output,
+    not a heading — counting it made dead anchors resolve.
+    """
+    found: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence and (match := HEADING.match(line)):
+            found.append(match.group(1))
+    return found
+
+
 def _check_anchor(path: Path, anchor: str, span: str, line: int, target: str) -> Claim:
     try:
-        headings = HEADING.findall(path.read_text(encoding="utf-8"))
+        headings = _headings(path.read_text(encoding="utf-8"))
     except OSError as exc:
         return Claim("link", f"anchor #{anchor} exists", "skip", str(exc), span, line)
     if anchor in {_slug(h) for h in headings}:

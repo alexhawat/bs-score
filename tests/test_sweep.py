@@ -68,3 +68,22 @@ def test_index_skips_noise_directories(tmp_path, skipped):
     (tmp_path / skipped).mkdir()
     (tmp_path / skipped / "a.md").write_text("needle", encoding="utf-8")
     assert TreeIndex(tmp_path).find("needle") == []
+
+
+def test_listing_paths_does_not_read_file_contents(tmp_path):
+    """The depth check only needs to know which paths exist.
+
+    Normalising every file's contents to answer that was most of the cost of a
+    `--no-scan` run, which is supposed to skip exactly that work.
+    """
+    (tmp_path / "a.py").write_text("print('hello')\n")
+    (tmp_path / "b.md").write_text("# doc\n")
+    tree = TreeIndex(tmp_path)
+
+    assert tree.paths() == ["a.py", "b.md"]
+    assert tree.file_count == 2
+    assert tree._files is None, "paths() built the full content index"
+
+    # The sweep still works, and sees the same files.
+    assert [o.path for o in tree.find("print('hello')")] == ["a.py"]
+    assert sorted(tree._files) == tree.paths()

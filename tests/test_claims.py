@@ -147,3 +147,30 @@ def test_this_repos_own_docs_have_no_failing_claims(document):
     report = claims.audit_document(REPO / document, REPO)
     failed = [c for c in report if c.verdict == "fail" and c.span not in ILLUSTRATIVE_SPANS]
     assert failed == [], [(c.claim, c.evidence) for c in failed]
+
+
+def test_a_flag_on_the_next_line_is_not_this_commands_flag(tmp_path):
+    """`\\s+` used to cross newlines, so another tool's flag became a false claim."""
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "demo"\n[project.scripts]\nbs-score = "bs_score.cli:run"\n'
+    )
+    module = tmp_path / "src" / "bs_score"
+    module.mkdir(parents=True)
+    (module / "cli.py").write_text(
+        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--repo-root')\n"
+    )
+    doc = tmp_path / "doc.md"
+    doc.write_text("    bs-score findings.json\n    ruff check --totally-made-up .\n")
+
+    flags = [c for c in claims.audit_document(doc, tmp_path) if c.kind == "flag"]
+    assert [c.claim for c in flags if c.verdict == "fail"] == []
+
+
+def test_a_heading_inside_a_fence_does_not_satisfy_an_anchor(tmp_path):
+    """```console output that starts with `##` is not a heading to link to."""
+    doc = tmp_path / "doc.md"
+    doc.write_text(
+        "# Real\n\n[phantom](#phantom-section)\n\n```console\n## Phantom Section\n```\n"
+    )
+    anchors = [c for c in claims.audit_document(doc, tmp_path) if "anchor" in c.claim]
+    assert [c.verdict for c in anchors] == ["fail"]

@@ -167,3 +167,20 @@ def test_version_flag(flag, capsys):
     with pytest.raises(SystemExit) as excinfo:
         main([flag])
     assert excinfo.value.code == 0
+
+
+def test_quiet_still_reports_why_a_run_failed(tmp_path, capsys):
+    """`-q` used to drop every log sink, so exit 2 printed nothing at all.
+
+    action.yml passes `-q`, which made an unusable payload a silent CI failure.
+    """
+    from bs_score.logging_setup import configure
+
+    bad = tmp_path / "notfindings.json"
+    bad.write_text('{"hello": "world"}')
+    code = main([str(bad), "--repo-root", str(tmp_path), "-q"])
+    captured = capsys.readouterr()
+    assert code == EXIT_INVALID
+    assert "unusable" in captured.err
+    assert captured.out == ""
+    configure(0)  # leave the sink as the other tests expect it

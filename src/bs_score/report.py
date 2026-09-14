@@ -147,9 +147,14 @@ def build_report(
     count_by_type: Counter[str] = Counter()
     evidence_counts: Counter[str] = Counter()
     seen_ids: set[str] = set()
-    seen_keys: dict[tuple[str, ...], int] = {}
-    seen_quotes: dict[tuple[str, str], int] = {}
-    seen_clusters: dict[tuple[str, ...], int] = {}
+    # Merge targets are (bucket, index): a duplicate of a baselined finding is a
+    # duplicate, not a second baselined finding. Registering only `kept` made the
+    # same payload report `deduped 1` normally and `baselined 6` under a
+    # baseline that covered it.
+    seen_keys: dict[tuple[str, ...], tuple[str, int]] = {}
+    seen_quotes: dict[tuple[str, str], tuple[str, int]] = {}
+    seen_clusters: dict[tuple[str, ...], tuple[str, int]] = {}
+    buckets = {"kept": kept, "baselined": baselined}
     total = 0
 
     def reject(index: int, finding: Any, reason: str, detail: str) -> None:
@@ -159,6 +164,19 @@ def build_report(
         entry["finding"] = finding
         rejected.append(entry)
         logger.debug("rejected findings[{}] ({}): {}", index, reason, detail)
+
+    def register(
+        key: tuple[str, ...],
+        quote_key: tuple[str, str],
+        cluster_key: tuple[str, ...] | None,
+        bucket: str,
+        position: int,
+    ) -> None:
+        """Make this finding the merge target for later duplicates of it."""
+        seen_keys[key] = (bucket, position)
+        seen_quotes.setdefault(quote_key, (bucket, position))
+        if cluster_key is not None:
+            seen_clusters.setdefault(cluster_key, (bucket, position))
 
     for index, finding in enumerate(payload["findings"]):
         errors = schema_validate.validate(finding, finding_schema, f"findings[{index}]")
@@ -197,30 +215,38 @@ def build_report(
 
         cluster_key = _cluster_key(finding, scoring)
 
-        target_index = seen_keys.get(key)
+        target = seen_keys.get(key)
         reason = DUPLICATE
-        if target_index is None and cluster_key is not None:
-            target_index = seen_clusters.get(cluster_key)
+        if target is None and cluster_key is not None:
+            target = seen_clusters.get(cluster_key)
             reason = SAME_CLUSTER
-        if target_index is None and scoring.dedupe.cluster_cross_path:
-            target_index = seen_quotes.get((str(finding["type"]), fingerprint))
+        if target is None and scoring.dedupe.cluster_cross_path:
+            target = seen_quotes.get((str(finding["type"]), fingerprint))
             reason = CROSS_PATH_DUPLICATE
-        if target_index is not None:
-            merged_entry = {"id": finding_id, "path": str(finding["path"])}
-            kept[target_index].setdefault("merged", []).append(merged_entry)
-            # A cluster's blast radius is the union of its members' quotes, so a
-            # root cause worded three ways is still counted everywhere it lands.
-            kept[target_index].setdefault("_merged_quotes", []).append(str(finding["quote"]))
+        if target is not None:
+            bucket, target_index = target
+            entry = buckets[bucket][target_index]
+            entry.setdefault("merged", []).append(
+                {"id": finding_id, "path": str(finding["path"])}
+            )
+            if bucket == "kept":
+                # A cluster's blast radius is the union of its members' quotes,
+                # so a root cause worded three ways is still counted everywhere
+                # it lands. Baselined findings are not swept — they score nothing.
+                entry.setdefault("_merged_quotes", []).append(str(finding["quote"]))
             deduped.append(
                 {
                     "index": index,
                     "id": finding_id,
                     "reason": reason,
-                    "merged_into": kept[target_index]["id"],
+                    "merged_into": entry["id"],
+                    "merged_into_bucket": bucket,
                     "finding": finding,
                 }
             )
             continue
+
+        quote_key = (str(finding["type"]), fingerprint)
 
         if baseline_mod.key_of(
             {"type": finding["type"], "canonical_file": locator.ref,
@@ -234,8 +260,7 @@ def build_report(
                     "evidence": verdict.as_dict(),
                 }
             )
-            # Not registered in seen_keys: an identical later finding is
-            # baselined on its own key, not merged into this one.
+            register(key, quote_key, cluster_key, "baselined", len(baselined) - 1)
             continue
 
         points = profile.points(str(finding["type"]))
@@ -251,10 +276,7 @@ def build_report(
                 "points": points,
             }
         )
-        seen_keys[key] = len(kept) - 1
-        seen_quotes.setdefault((str(finding["type"]), fingerprint), len(kept) - 1)
-        if cluster_key is not None:
-            seen_clusters.setdefault(cluster_key, len(kept) - 1)
+        register(key, quote_key, cluster_key, "kept", len(kept) - 1)
 
     if tree is not None and options.scan:
         _attach_blast_radius(kept, tree)

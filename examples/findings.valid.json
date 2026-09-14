@@ -1,7 +1,7 @@
 {
   "version": 1,
   "target_kind": "repo",
-  "target_ref": "example/demo",
+  "target_ref": "examples/fixture-repo",
   "audit": {
     "files_read": [
       "README.md",

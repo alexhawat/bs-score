@@ -6,7 +6,7 @@
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "repo",
-  "target_ref": "example/demo",
+  "target_ref": "examples/fixture-repo",
   "profile": "repo",
   "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
   "weights": {
@@ -72,7 +72,7 @@
   "scoring_version": 2,
   "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
   "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
-  "findings_sha256": "ea1c0cd99d82b64a7567593a8faa3e119b64805a7f72e86edbff55f689b30146",
+  "findings_sha256": "e1280c5625191d1ea0d429cc86554b2e978354e443d8b2b93d9caeb258b91099",
   "confidence_affects_score": false,
   "kept": [
     {
@@ -227,6 +227,7 @@
       "id": "f3-dup",
       "reason": "duplicate",
       "merged_into": "f3",
+      "merged_into_bucket": "kept",
       "finding": {
         "id": "f3-dup",
         "type": "bug",

@@ -20,15 +20,47 @@ MARKDOWN = sorted(
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 
 
+#: Links into this repository's own README, however they are spelled.
+OWN_README = ("https://github.com/alexhawat/bs_score#", "https://github.com/alexhawat/bs_score/#")
+
+
+def _anchors(path) -> set[str]:
+    """GitHub-style slugs of every heading in a Markdown file, fences excluded."""
+    from bs_score.claims import _slug
+
+    slugs: set[str] = set()
+    in_fence = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence and (match := re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", line)):
+            slugs.add(_slug(match.group(1)))
+    return slugs
+
+
 @pytest.mark.parametrize("document", MARKDOWN, ids=lambda p: str(p.relative_to(REPO)))
 def test_relative_links_resolve(document):
-    """A dead link in a project about phantom references would be embarrassing."""
+    """A dead link in a project about phantom references would be embarrassing.
+
+    Anchors count: `README.md#install` pointing at a heading that does not exist
+    is a phantom reference that lands the reader somewhere else in silence. The
+    absolute form of a link into this repo's own README is checked the same way —
+    fifteen generated files pointed at a `#install` section that never existed.
+    """
     broken = []
     for target in LINK.findall(document.read_text(encoding="utf-8")):
-        if target.startswith(("http://", "https://", "#", "mailto:")):
+        if target.startswith(OWN_README):
+            resolved, anchor = REPO / "README.md", target.split("#", 1)[1]
+        elif target.startswith(("http://", "https://", "mailto:")):
             continue
-        resolved = (document.parent / target.split("#", 1)[0]).resolve()
-        if not resolved.exists():
+        else:
+            path_part, _, anchor = target.partition("#")
+            resolved = (document.parent / path_part).resolve() if path_part else document
+            if not resolved.exists():
+                broken.append(target)
+                continue
+        if anchor and resolved.suffix.lower() == ".md" and anchor not in _anchors(resolved):
             broken.append(target)
     assert broken == [], f"{document.relative_to(REPO)} links to: {broken}"
 
@@ -76,8 +108,11 @@ def test_checklists_exist_for_every_review_type(schema):
         assert (REPO / "checklists" / f"{name}.md").is_file(), kind
 
 
-# A ```console block whose first line is `$ bs-score …` is a claim about output.
-CONSOLE_COMMAND = re.compile(r"^\$\s+bs-score\s+(.*)$")
+# A ```console block whose first line invokes the scorer is a claim about output.
+# The `uv run` / `python3 score.py` spellings run the same CLI, so they are the
+# same claim: scoping this to a bare `bs-score` once let two fabricated demo
+# blocks sit in the README with CI green.
+CONSOLE_COMMAND = re.compile(r"^\$\s+(?:uv run\s+)?(?:bs-score|python3?\s+score\.py)\s+(.*)$")
 
 
 def _console_blocks(text: str) -> list[tuple[str, list[str]]]:
