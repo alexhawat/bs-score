@@ -261,7 +261,7 @@ CLI surface (rendered from the argparse definitions)
 - `--fail-over` — Exit 1 when the score exceeds N (for CI gates)
 - `--format` — Report format on stdout (default: json; sarif for GitHub code scanning)
 - `--baseline` — Suppress findings already in this baseline file; only new findings score
-- `--write-baseline` — Write the kept findings as a baseline file for future --baseline runs
+- `--write-baseline` — Write every accepted finding (kept and already-baselined) as a baseline file for future --baseline runs
 - `-o, --output` — Also write the report here
 - `--scoring` — Alternative scoring.json (requires --allow-custom-scoring)
 - `--allow-custom-scoring` — Acknowledge that --scoring produces a score the published weights do not define

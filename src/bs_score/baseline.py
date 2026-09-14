@@ -3,8 +3,9 @@
 A baseline is the set of dedupe keys — ``(type, canonical file, quote
 fingerprint)`` — for findings a project has seen and chosen to live with.
 ``--baseline`` removes matching findings from the score (they are listed under
-``baselined`` in the report, not ``kept``); ``--write-baseline`` captures the
-current kept set so tomorrow's run only scores what changed.
+``baselined`` in the report, not ``kept``); ``--write-baseline`` captures
+everything the run accepted — ``kept`` *and* ``baselined`` — so tomorrow's run
+only scores what changed, and refreshing a baseline in place keeps it.
 """
 
 from __future__ import annotations
