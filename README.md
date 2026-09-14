@@ -84,7 +84,7 @@ $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 - evidence: verified (path_not_found 1, quote_not_found 3)
 - depth: **unreported** — no `audit.files_read` block, so depth is unverifiable
 - blast radius: 0 file(s) affected across 10 scanned
-- scoring `30ad8b532c34` · schema `991705a46093`
+- scoring `30ad8b532c34` · schema `749e202f7380`
 
 ### Rejected (not scored)
 

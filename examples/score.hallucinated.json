@@ -52,7 +52,7 @@
   },
   "scoring_version": 2,
   "scoring_sha256": "30ad8b532c346d8cdbf3f1d1916d4b96ade1b54e5e1b2f79356b6c15532787c6",
-  "schema_sha256": "991705a460938d0fedff9b7fe10705f95aeef0bde9dc7d74b793d8097411fc1a",
+  "schema_sha256": "749e202f73800e505fddedab52f63a3d4bbf1b4f5f11151d4c8cac5c521f7af2",
   "findings_sha256": "bafbc93df1329777ea7640094eca1bf53dc60f85bf25aff7aa90573e2546d69d",
   "confidence_affects_score": false,
   "kept": [],
