@@ -43,9 +43,14 @@ runtime wrappers people actually install.
 
 ### Changed
 
-- A kept finding's `occurrences` now lists where the scorer *found* the quote
-  (`{path, line}`); reports merged into it by dedupe are listed under `merged`.
-  The Markdown renderer gained `files` and depth/blast-radius lines.
+- **Breaking — `occurrences` changed meaning.** On a kept finding it now lists
+  where the scorer *found* the quote, as `{path, line}` objects. The reports
+  merged into it by dedupe — what `occurrences` used to hold — moved to
+  `merged`. Anything reading `occurrences` as "how many duplicates were filed"
+  reads a different thing now, and gets objects where it expected `{id, path}`.
+  Nothing in this repository depends on the old shape: `baseline.py` keys on
+  `(type, canonical_file, quote_fingerprint)` and is unaffected.
+- The Markdown renderer gained a `files` column and depth / blast-radius lines.
 - The `prompt` example scores against `examples/fixture-prompts` rather than the
   repository root, so its receipt does not change every time the repo gains a
   file; the self-audit runs with `--no-scan` for the same reason.
