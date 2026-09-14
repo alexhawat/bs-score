@@ -227,6 +227,7 @@
       "id": "f3-dup",
       "reason": "duplicate",
       "merged_into": "f3",
+      "merged_into_bucket": "kept",
       "finding": {
         "id": "f3-dup",
         "type": "bug",

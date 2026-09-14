@@ -31,9 +31,11 @@ def test_write_then_baseline_scores_only_new_findings(tmp_path, capsys):
     assert report["score"] == 0
     assert report["band"] == "clean"
     assert report["kept_count"] == 0
-    # f3-dup no longer merges into f3 (baselined findings don't register dedupe
-    # keys), so it is baselined on its own identical key.
-    assert report["baselined_count"] == 6
+    # Dedupe still applies: f3-dup merges into f3, which is baselined. The
+    # accepted set is the same five findings a scoring run keeps.
+    assert report["baselined_count"] == 5
+    assert report["deduped_count"] == 1
+    assert report["deduped"][0]["merged_into_bucket"] == "baselined"
 
     # One new finding on top of the baseline scores on its own.
     payload = json.loads((EXAMPLES / "findings.valid.json").read_text())
@@ -52,7 +54,7 @@ def test_write_then_baseline_scores_only_new_findings(tmp_path, capsys):
     _, report = _run([str(findings), *ROOT, "--baseline", str(baseline)], capsys)
     assert report["score"] == 2
     assert report["kept_count"] == 1
-    assert report["baselined_count"] == 6
+    assert report["baselined_count"] == 5
 
 
 def test_fail_over_gates_on_new_findings_only(tmp_path, capsys):

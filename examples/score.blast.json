@@ -146,6 +146,7 @@
       "id": "install-quickstart",
       "reason": "same_root_cause",
       "merged_into": "install-readme",
+      "merged_into_bucket": "kept",
       "finding": {
         "id": "install-quickstart",
         "type": "missing_feature",
@@ -163,6 +164,7 @@
       "id": "install-docs",
       "reason": "same_root_cause",
       "merged_into": "install-readme",
+      "merged_into_bucket": "kept",
       "finding": {
         "id": "install-docs",
         "type": "missing_feature",

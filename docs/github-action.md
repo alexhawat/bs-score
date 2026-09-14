@@ -12,10 +12,17 @@ The composite action is [`action.yml`](../action.yml). Minimum usage:
 Inputs: `findings`, `repo-root`, `sources`, `fail-over`, `require-depth`,
 `no-scan`, `baseline`, `format`, `ref`. Outputs: `score`, `band`, `report`.
 
-> `ref` selects the revision of this repository the scorer is installed from,
-> and defaults to `main`. Pinning the action (`alexhawat/bs_score@<sha>`) does
-> **not** pin the scorer — pass `ref` with the same revision if you need both
-> pinned together.
+`ref` selects the revision of this repository the scorer is installed from. It
+defaults to the ref the action itself was resolved at, so pinning the action
+pins the scorer with it:
+
+```yaml
+- uses: alexhawat/bs_score@8f0c1d2   # the scorer is installed from 8f0c1d2 too
+```
+
+Set it explicitly only to run a different revision of the scorer than the
+action. It falls back to `main` when the action runs from a local path
+(`uses: ./`), where GitHub provides no ref.
 
 ## Post the Markdown report as a PR comment
 

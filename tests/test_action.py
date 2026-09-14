@@ -48,3 +48,16 @@ def test_readme_action_example_uses_declared_inputs():
     assert snippet, "README is missing the action example"
     used = set(re.findall(r"^\s{4,}(\w[\w-]*):", snippet.group(1), re.MULTILINE)) - {"with"}
     assert used <= declared, f"README uses undeclared input(s): {sorted(used - declared)}"
+
+
+def test_the_scorer_ref_defaults_to_the_actions_own_ref():
+    """`uses: alexhawat/bs_score@<sha>` must pin the scorer to that sha too.
+
+    `ref` defaulted to `main`, so a pinned action still installed whatever main
+    happened to be — the action was pinned and the code it ran was not.
+    """
+    action = _load()
+    assert action["inputs"]["ref"]["default"] == ""
+    step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
+    assert step["env"]["ACTION_REF"] == "${{ github.action_ref }}"
+    assert 'REF="${REF:-${ACTION_REF:-main}}"' in step["run"]

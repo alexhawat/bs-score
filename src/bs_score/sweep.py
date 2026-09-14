@@ -97,15 +97,22 @@ class TreeIndex:
         # occurrences.
         self.fold_case = fold_case
         self._files: dict[str, _IndexedFile] | None = None
+        self._scanned: dict[str, Path] | None = None
 
     @property
     def file_count(self) -> int:
-        """Number of indexed text files."""
-        return len(self._index())
+        """Number of text files in the tree."""
+        return len(self._scan())
 
     def paths(self) -> list[str]:
-        """Repo-relative paths of every indexed file, sorted."""
-        return sorted(self._index())
+        """Repo-relative paths of every text file, sorted.
+
+        Answered from the candidate scan, which stats each file and sniffs its
+        first 8 KiB. The depth check only needs to know which paths exist, and
+        normalising every file's full contents to answer that was most of a
+        `--no-scan` run's cost.
+        """
+        return sorted(self._scan())
 
     def _candidate_paths(self) -> list[Path]:
         """Tracked files when this is a git checkout, else everything on disk."""
@@ -125,14 +132,15 @@ class TreeIndex:
             logger.debug("git unavailable; falling back to a filesystem walk")
         return [p for p in self.root.rglob("*") if p.is_file()]
 
-    def _index(self) -> dict[str, _IndexedFile]:
-        if self._files is not None:
-            return self._files
+    def _scan(self) -> dict[str, Path]:
+        """Repo-relative path → file, for every text file worth searching."""
+        if self._scanned is not None:
+            return self._scanned
 
-        indexed: dict[str, _IndexedFile] = {}
+        found: dict[str, Path] = {}
         for path in self._candidate_paths():
-            if len(indexed) >= MAX_FILES:
-                logger.warning("stopped indexing at {} files", MAX_FILES)
+            if len(found) >= MAX_FILES:
+                logger.warning("stopped scanning at {} files", MAX_FILES)
                 break
             try:
                 relative = path.relative_to(self.root)
@@ -145,12 +153,32 @@ class TreeIndex:
             try:
                 if not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
                     continue
-                raw = path.read_bytes()
+                with path.open("rb") as handle:
+                    if b"\0" in handle.read(8192):
+                        continue
             except OSError:
                 continue
-            if b"\0" in raw[:8192]:
+            found[relative.as_posix()] = path
+
+        logger.info("scanned {} text file(s) under {}", len(found), self.root)
+        self._scanned = found
+        return found
+
+    def _index(self) -> dict[str, _IndexedFile]:
+        if self._files is not None:
+            return self._files
+
+        indexed: dict[str, _IndexedFile] = {}
+        for relative, path in self._scan().items():
+            try:
+                raw = path.read_bytes()
+            except OSError:
+                # Scanned a moment ago, gone now. Keep the path known — it is
+                # what `paths()` and the depth check already reported — and let
+                # it match nothing.
+                indexed[relative] = _IndexedFile("", [], [])
                 continue
-            indexed[relative.as_posix()] = _normalize_with_lines(
+            indexed[relative] = _normalize_with_lines(
                 raw.decode("utf-8", "replace"), fold_case=self.fold_case
             )
 
