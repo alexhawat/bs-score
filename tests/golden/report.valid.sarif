@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "bs-score",
+          "version": "2.2.0",
+          "informationUri": "https://github.com/alexhawat/bs_score",
+          "rules": [
+            {
+              "id": "breaking_bug",
+              "name": "breaking_bug",
+              "shortDescription": {
+                "text": "breaking_bug (5 pts)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "bug",
+              "name": "bug",
+              "shortDescription": {
+                "text": "bug (3 pts)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "missing_feature",
+              "name": "missing_feature",
+              "shortDescription": {
+                "text": "missing_feature (3 pts)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "security_issue",
+              "name": "security_issue",
+              "shortDescription": {
+                "text": "security_issue (4 pts)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "wrong_claim",
+              "name": "wrong_claim",
+              "shortDescription": {
+                "text": "wrong_claim (2 pts)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "wrong_claim",
+          "level": "note",
+          "message": {
+            "text": "README claims OAuth; only API keys exist — claim: Supports OAuth2 login out of the box"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "README.md"
+                },
+                "region": {
+                  "startLine": 9
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "bs_score/quote": "c2d4029ab0976821"
+          }
+        },
+        {
+          "ruleId": "missing_feature",
+          "level": "warning",
+          "message": {
+            "text": "Streaming API documented but absent — claim: Real-time streaming endpoint at /v1/stream"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "README.md"
+                },
+                "region": {
+                  "startLine": 10
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "bs_score/quote": "05ead34d2cb07f67"
+          }
+        },
+        {
+          "ruleId": "bug",
+          "level": "warning",
+          "message": {
+            "text": "Off-by-one in pagination"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/api.py"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "bs_score/quote": "cea2d835e624e20a"
+          }
+        },
+        {
+          "ruleId": "security_issue",
+          "level": "error",
+          "message": {
+            "text": "SQL built with f-string"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.py"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "bs_score/quote": "37e2fbe54b669844"
+          }
+        },
+        {
+          "ruleId": "breaking_bug",
+          "level": "error",
+          "message": {
+            "text": "delete_user ignores ownership"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/users.py"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "bs_score/quote": "d5985434bf3dea82"
+          }
+        }
+      ],
+      "properties": {
+        "bs_score": 17,
+        "band": "bullshit",
+        "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff"
+      }
+    }
+  ]
+}

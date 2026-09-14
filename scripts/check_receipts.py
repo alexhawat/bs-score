@@ -29,12 +29,19 @@ INVOCATIONS: dict[str, list[str]] = {
     ],
     "skill": ["--repo-root", "examples/fixture-repo"],
     "agent": ["--repo-root", "examples/fixture-repo"],
+    # This branch keeps the prompt example rooted at its own fixture dir: with the
+    # blast-radius sweep on, "--repo-root ." records a whole-repo file count that
+    # changes every time the repository gains a file, and the receipt goes stale.
     "prompt": [
         "--repo-root",
         "examples/fixture-prompts",
         "--sources",
         "examples/fixture-prompts",
     ],
+    "docs": ["--repo-root", "examples/fixture-docs"],
+    "i18n": ["--repo-root", "examples/fixture-i18n"],
+    "wild-tinycache": ["--repo-root", "examples/in-the-wild/tinycache"],
+    "wild-greetcli": ["--repo-root", "examples/in-the-wild/greetcli"],
     "hallucinated": ["--repo-root", "examples/fixture-repo"],
     "blast": ["--repo-root", "examples/fixture-repo"],
     "shallow": ["--repo-root", "examples/fixture-repo"],

@@ -7,9 +7,12 @@ import re
 import pytest
 from conftest import REPO
 
-from bs_score.cli import build_parser
+from bs_score.cli import build_claims_parser, build_parser
 
-SKIP_DIRS = {".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build", "fixture-repo"}
+SKIP_DIRS = {
+    ".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build",
+    "fixture-repo", "fixture-docs", "fixture-i18n", "tinycache", "greetcli",
+}
 
 MARKDOWN = sorted(
     path for path in REPO.rglob("*.md") if not SKIP_DIRS & set(path.parts)
@@ -45,7 +48,7 @@ def test_documented_flags_exist(document):
     bs-score cannot hide next to one that is real.
     """
     known: set[str] = set()
-    for action in build_parser()._actions:
+    for action in [*build_parser()._actions, *build_claims_parser()._actions]:
         known.update(action.option_strings)
 
     unknown: set[str] = set()

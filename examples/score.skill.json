@@ -1,7 +1,8 @@
 {
-  "bs_score_version": "2.1.0",
+  "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
   "score": 7,
+  "band": "misleading",
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "skill",
@@ -26,6 +27,7 @@
   "kept_count": 2,
   "rejected_count": 0,
   "deduped_count": 0,
+  "baselined_count": 0,
   "blast_radius": {
     "mode": "scanned",
     "tree_files": 10,
@@ -47,6 +49,7 @@
     "repo_root": "examples/fixture-repo",
     "sources": [],
     "line_window": 10,
+    "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
     "require_depth": false,
@@ -55,8 +58,8 @@
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1f400e21826bf91d68e06e50e333fb1cc13e624841798c119519d1de654525ea",
-  "schema_sha256": "2af4b7a1475ca72931f9ef55bdfb23bc1827de5cf6e558a700b54dc2768b3103",
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
   "findings_sha256": "d6322d7981ecbe6ff179451419ad389759508fdb1f4ea9e20df8fa7288dc4d78",
   "confidence_affects_score": false,
   "kept": [
@@ -112,5 +115,6 @@
     }
   ],
   "rejected": [],
-  "deduped": []
+  "deduped": [],
+  "baselined": []
 }

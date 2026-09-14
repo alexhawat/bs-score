@@ -1,0 +1,117 @@
+{
+  "bs_score_version": "2.2.0",
+  "label": "Bullshit Score",
+  "score": 10,
+  "band": "misleading",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "docs",
+  "target_ref": "greetcli@1.2 (synthetic-but-realistic snapshot)",
+  "profile": "docs",
+  "profile_description": "Claims-only audit of a document. Nothing but contradictions between what the text says and what exists; a wrong claim is the defining docs failure, so it weighs most.",
+  "weights": {
+    "breaking_bug": 2,
+    "bug": 1,
+    "missing_feature": 3,
+    "security_issue": 3,
+    "wrong_claim": 5
+  },
+  "by_type": {
+    "wrong_claim": 10
+  },
+  "count_by_type": {
+    "wrong_claim": 2
+  },
+  "kept_count": 2,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "baselined_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 3,
+    "files_affected": [
+      "README.md"
+    ]
+  },
+  "depth": {
+    "status": "not_required",
+    "requires_code_pass": false,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/in-the-wild/greetcli",
+    "sources": [],
+    "line_window": 10,
+    "fold_case": false,
+    "require_evidence": false,
+    "strict_lines": false,
+    "require_depth": false,
+    "by_status": {
+      "verified": 2
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
+  "findings_sha256": "5cd8a38fa4cf70030c8e4e90ac2b81cb43130a506152651a38c8d0bc564f08f6",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "w1",
+      "type": "wrong_claim",
+      "title": "README promises Python 3.8; pyproject requires 3.10",
+      "path": "README.md:3",
+      "quote": "Works on Python 3.8 and newer.",
+      "claim": "greetcli runs on Python 3.8+",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "3cbb06fd9b83c659",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 3
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    },
+    {
+      "id": "w2",
+      "type": "wrong_claim",
+      "title": "README documents --shout; the CLI has no such flag",
+      "path": "README.md:12",
+      "quote": "`--shout` uppercases the greeting.",
+      "claim": "greet has a --shout flag",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "README.md",
+      "quote_fingerprint": "4de894d3a03558a5",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.md"
+      },
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "README.md",
+          "line": 12
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    }
+  ],
+  "rejected": [],
+  "deduped": [],
+  "baselined": []
+}

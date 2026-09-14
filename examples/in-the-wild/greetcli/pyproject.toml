@@ -1,0 +1,11 @@
+[project]
+name = "greetcli"
+version = "1.2.0"
+requires-python = ">=3.10"
+
+[project.scripts]
+greet = "greetcli.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

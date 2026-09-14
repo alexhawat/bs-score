@@ -46,8 +46,8 @@ BROKEN_PAYLOADS = [
 ]
 
 VALID_PAYLOADS = [load_example(name) for name in
-                  ("valid", "review", "skill", "agent", "prompt", "hallucinated", "blast",
-     "shallow", "self")]
+                  ("valid", "review", "skill", "agent", "prompt", "docs", "i18n",
+     "wild-tinycache", "wild-greetcli", "hallucinated", "blast", "shallow", "self")]
 
 
 @pytest.mark.parametrize("payload", VALID_PAYLOADS + BROKEN_PAYLOADS)

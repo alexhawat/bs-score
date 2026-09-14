@@ -17,6 +17,7 @@ from typing import Any
 
 from loguru import logger
 
+from . import baseline as baseline_mod
 from . import depth as depth_module
 from . import locators, schema_validate
 from .evidence import Verdict, Verifier
@@ -36,6 +37,25 @@ class PayloadError(ValueError):
     """The findings envelope is unusable, so no score can be produced."""
 
 
+#: Score bands, display-only. The raw sum is the score; the band is a label for
+#: humans reading a report in isolation. ``(upper_bound, label)``; the last
+#: band is unbounded.
+BANDS: tuple[tuple[int | None, str], ...] = (
+    (0, "clean"),
+    (5, "minor drift"),
+    (15, "misleading"),
+    (None, "bullshit"),
+)
+
+
+def score_band(score: int) -> str:
+    """Display label for a score: 0 clean · 1–5 minor drift · 6–15 misleading · 16+ bullshit."""
+    for upper, label in BANDS:
+        if upper is None or score <= upper:
+            return label
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 @dataclass(frozen=True)
 class Options:
     """Knobs that change a report's meaning, recorded in the receipt."""
@@ -45,6 +65,9 @@ class Options:
     require_depth: bool = False
     scan: bool = True
     fail_over: int | None = None
+    fold_case: bool = False
+    #: Dedupe keys of accepted findings, loaded from --baseline.
+    baseline: frozenset[tuple[str, str, str]] = frozenset()
 
 
 def _evidence_ok(finding: dict[str, Any], required: tuple[str, ...]) -> str | None:
@@ -119,6 +142,7 @@ def build_report(
     kept: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     deduped: list[dict[str, Any]] = []
+    baselined: list[dict[str, Any]] = []
     by_type: Counter[str] = Counter()
     count_by_type: Counter[str] = Counter()
     evidence_counts: Counter[str] = Counter()
@@ -166,7 +190,9 @@ def build_report(
             continue
 
         locator = locators.parse(str(finding["path"]))
-        fingerprint = locators.quote_fingerprint(str(finding["quote"]))
+        fingerprint = locators.quote_fingerprint(
+            str(finding["quote"]), fold_case=options.fold_case
+        )
         key = _dedupe_key(finding, locator, fingerprint, scoring)
 
         cluster_key = _cluster_key(finding, scoring)
@@ -194,6 +220,22 @@ def build_report(
                     "finding": finding,
                 }
             )
+            continue
+
+        if baseline_mod.key_of(
+            {"type": finding["type"], "canonical_file": locator.ref,
+             "quote_fingerprint": fingerprint}
+        ) in options.baseline:
+            baselined.append(
+                {
+                    **finding,
+                    "canonical_file": locator.ref,
+                    "quote_fingerprint": fingerprint,
+                    "evidence": verdict.as_dict(),
+                }
+            )
+            # Not registered in seen_keys: an identical later finding is
+            # baselined on its own key, not merged into this one.
             continue
 
         points = profile.points(str(finding["type"]))
@@ -232,6 +274,7 @@ def build_report(
         "bs_score_version": __version__,
         "label": scoring.label,
         "score": total,
+        "band": score_band(total),
         "verdict": verdict_label,
         "fail_over": options.fail_over,
         "target_kind": target_kind,
@@ -244,6 +287,7 @@ def build_report(
         "kept_count": len(kept),
         "rejected_count": len(rejected),
         "deduped_count": len(deduped),
+        "baselined_count": len(baselined),
         "blast_radius": {
             "mode": "scanned" if (tree is not None and options.scan) else "not_scanned",
             "tree_files": tree.file_count if (tree is not None and options.scan) else None,
@@ -261,6 +305,7 @@ def build_report(
             "repo_root": verifier.given_root.as_posix() if verifier.given_root else None,
             "sources": verifier.sources.ids,
             "line_window": verifier.line_window,
+            "fold_case": options.fold_case,
             "require_evidence": options.require_evidence,
             "strict_lines": options.strict_lines,
             "require_depth": options.require_depth,
@@ -274,6 +319,7 @@ def build_report(
         "kept": kept,
         "rejected": rejected,
         "deduped": deduped,
+        "baselined": baselined,
     }
     logger.info(
         "score {} ({} kept, {} rejected, {} deduped)",
@@ -322,12 +368,12 @@ def render_markdown(report: dict[str, Any]) -> str:
     evidence = report["evidence"]
     statuses = ", ".join(f"{k} {v}" for k, v in evidence["by_status"].items()) or "n/a"
     lines = [
-        f"## {report['label']}: **{report['score']}**",
+        f"## {report['label']}: **{report['score']}** ({report['band']})",
         "",
         f"- review type: `{report['target_kind']}` (profile `{report['profile']}`)",
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
         f"- kept {report['kept_count']} · rejected {report['rejected_count']} "
-        f"· deduped {report['deduped_count']}",
+        f"· deduped {report['deduped_count']} · baselined {report['baselined_count']}",
         f"- evidence: {evidence['mode']} ({statuses})",
         f"- depth: {_describe_depth(report['depth'])}",
         f"- blast radius: {_describe_blast_radius(report['blast_radius'])}",
@@ -364,6 +410,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             label = entry.get("id", entry["index"])
             lines.append(f"- `{label}` — {entry['reason']}: {entry['detail']}")
         lines.append("")
+    if report["baselined"]:
+        lines += ["### Baselined (accepted, not scored)", ""]
+        for finding in report["baselined"]:
+            lines.append(f"- `{finding['id']}` — {finding['title']} (`{finding['path']}`)")
+        lines.append("")
     return "\n".join(lines)
 
 
@@ -394,6 +445,7 @@ def _describe_blast_radius(blast: dict[str, Any]) -> str:
 
 
 __all__ = [
+    "BANDS",
     "CROSS_PATH_DUPLICATE",
     "DUPLICATE",
     "MISSING_EVIDENCE",
@@ -404,5 +456,6 @@ __all__ = [
     "UNVERIFIED_EVIDENCE",
     "build_report",
     "render_markdown",
+    "score_band",
     "sha256_of_document",
 ]

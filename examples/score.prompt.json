@@ -1,7 +1,8 @@
 {
-  "bs_score_version": "2.1.0",
+  "bs_score_version": "2.2.0",
   "label": "Bullshit Score",
   "score": 18,
+  "band": "bullshit",
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "prompt",
@@ -28,6 +29,7 @@
   "kept_count": 5,
   "rejected_count": 0,
   "deduped_count": 0,
+  "baselined_count": 0,
   "blast_radius": {
     "mode": "scanned",
     "tree_files": 2,
@@ -54,6 +56,7 @@
       "system.md"
     ],
     "line_window": 10,
+    "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
     "require_depth": false,
@@ -62,8 +65,8 @@
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1f400e21826bf91d68e06e50e333fb1cc13e624841798c119519d1de654525ea",
-  "schema_sha256": "2af4b7a1475ca72931f9ef55bdfb23bc1827de5cf6e558a700b54dc2768b3103",
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
   "findings_sha256": "a09376deada4abfd23d705a77dc9d94c1c4c45b97369eb3fcfc7c2b8f772924d",
   "confidence_affects_score": false,
   "kept": [
@@ -194,5 +197,6 @@
     }
   ],
   "rejected": [],
-  "deduped": []
+  "deduped": [],
+  "baselined": []
 }

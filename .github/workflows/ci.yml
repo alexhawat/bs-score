@@ -29,6 +29,8 @@ jobs:
         run: uv run pytest -q
       - name: Wrappers are generated, not hand-edited
         run: uv run python scripts/gen_agent_wrappers.py --check
+      - name: llms.txt files are generated, not hand-edited
+        run: uv run python scripts/gen_llms_txt.py --check
       - name: Receipts match a fresh run
         run: uv run python scripts/check_receipts.py
 

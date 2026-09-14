@@ -16,6 +16,8 @@ from pathlib import Path
 from loguru import logger
 
 from . import __version__
+from .baseline import BaselineError, load_baseline, write_baseline
+from .claims import audit_document, claims_as_findings
 from .evidence import DEFAULT_LINE_WINDOW, Verifier
 from .logging_setup import configure
 from .report import Options, PayloadError, build_report, render_markdown, sha256_of_document
@@ -26,6 +28,7 @@ from .resources import (
     load_json_file,
     locate,
 )
+from .sarif import render_sarif
 from .scoring import ScoringError, load_scoring
 from .sources import SourceError, load_sources
 from .sweep import TreeIndex
@@ -111,6 +114,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Lines of slack allowed around a stated line number (default: {DEFAULT_LINE_WINDOW})",
     )
     parser.add_argument(
+        "--fold-case",
+        action="store_true",
+        help="Match quotes case-insensitively (str.casefold). Off by default: a "
+        "quote that changes case is a changed quote.",
+    )
+    parser.add_argument(
         "--fail-over",
         type=int,
         metavar="N",
@@ -118,9 +127,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=("json", "md"),
+        choices=("json", "md", "sarif"),
         default="json",
-        help="Report format on stdout (default: json)",
+        help="Report format on stdout (default: json; sarif for GitHub code scanning)",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        metavar="FILE",
+        help="Suppress findings already in this baseline file; only new findings score",
+    )
+    parser.add_argument(
+        "--write-baseline",
+        type=Path,
+        metavar="FILE",
+        help="Write the kept findings as a baseline file for future --baseline runs",
     )
     parser.add_argument("-o", "--output", type=Path, help="Also write the report here")
     parser.add_argument(
@@ -139,8 +160,75 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_claims_parser() -> argparse.ArgumentParser:
+    """Return the parser for ``bs-score claims``."""
+    parser = argparse.ArgumentParser(
+        prog="bs-score claims",
+        description=(
+            "Mechanically check a document's checkable claims — paths, commands, "
+            "flags, versions, links, fenced code — without an LLM. Output is JSON: "
+            "one {kind, claim, verdict, evidence, line} per check. Fails are the "
+            "claims the document gets provably wrong."
+        ),
+    )
+    parser.add_argument("document", type=Path, help="The document to check (e.g. README.md)")
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=Path("."),
+        help="Tree that paths and packaging metadata resolve against (default: .)",
+    )
+    parser.add_argument(
+        "--check-links",
+        action="store_true",
+        help="Also fetch http(s) link targets (off by default; needs network)",
+    )
+    parser.add_argument(
+        "--emit-findings",
+        action="store_true",
+        help="Emit a findings payload (target_kind=docs) of the failed checks, "
+        "ready to score with: bs-score findings.json --repo-root .",
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, help="Repeat for more logs")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Silence logging")
+    return parser
+
+
+def claims_main(argv: list[str]) -> int:
+    """Run ``bs-score claims`` and return a process exit code."""
+    args = build_claims_parser().parse_args(argv)
+    configure(args.verbose, quiet=args.quiet)
+    logger.enable("bs_score")
+
+    if not args.document.is_file():
+        logger.error("not a file: {}", args.document)
+        return EXIT_INVALID
+    if not args.repo_root.is_dir():
+        logger.error("--repo-root is not a directory: {}", args.repo_root)
+        return EXIT_INVALID
+
+    claims = audit_document(args.document, args.repo_root, check_urls=args.check_links)
+    if args.emit_findings:
+        payload = claims_as_findings(claims, args.document, args.repo_root)
+    else:
+        payload = [claim.as_dict() for claim in claims]
+    sys.stdout.write(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    failed = sum(1 for claim in claims if claim.verdict == "fail")
+    logger.info(
+        "{} check(s): {} pass, {} fail, {} skip",
+        len(claims),
+        sum(1 for c in claims if c.verdict == "pass"),
+        failed,
+        sum(1 for c in claims if c.verdict == "skip"),
+    )
+    return EXIT_OVER_THRESHOLD if failed else EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
+    argv = list(sys.argv[1:]) if argv is None else list(argv)
+    if argv and argv[0] == "claims":
+        return claims_main(argv[1:])
     args = build_parser().parse_args(argv)
     configure(args.verbose, quiet=args.quiet)
     logger.enable("bs_score")
@@ -188,13 +276,25 @@ def main(argv: list[str] | None = None) -> int:
         logger.error(str(exc))
         return EXIT_INVALID
 
-    tree = TreeIndex(repo_root) if repo_root is not None else None
-    verifier = Verifier(repo_root, sources, line_window=args.line_window)
+    tree = (
+        TreeIndex(repo_root, fold_case=args.fold_case) if repo_root is not None else None
+    )
+    verifier = Verifier(
+        repo_root, sources, line_window=args.line_window, fold_case=args.fold_case
+    )
     if not verifier.enabled:
         logger.warning(
             "evidence verification is off; the score reflects what the model asserted, "
             "not what it proved"
         )
+
+    baseline_keys: frozenset[tuple[str, str, str]] = frozenset()
+    if args.baseline:
+        try:
+            baseline_keys = load_baseline(args.baseline)
+        except BaselineError as exc:
+            logger.error(str(exc))
+            return EXIT_INVALID
 
     options = Options(
         require_evidence=args.require_evidence,
@@ -202,6 +302,8 @@ def main(argv: list[str] | None = None) -> int:
         require_depth=args.require_depth,
         scan=not args.no_scan,
         fail_over=args.fail_over,
+        fold_case=args.fold_case,
+        baseline=baseline_keys,
     )
     try:
         report = build_report(
@@ -218,11 +320,15 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("findings payload is unusable: {}", exc)
         return EXIT_INVALID
 
-    text = (
-        render_markdown(report)
-        if args.format == "md"
-        else json.dumps(report, indent=2, ensure_ascii=False) + "\n"
-    )
+    if args.write_baseline:
+        write_baseline(args.write_baseline, report["kept"])
+
+    if args.format == "md":
+        text = render_markdown(report)
+    elif args.format == "sarif":
+        text = json.dumps(render_sarif(report), indent=2, ensure_ascii=False) + "\n"
+    else:
+        text = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text, encoding="utf-8")
@@ -237,4 +343,13 @@ def run() -> None:
     raise SystemExit(main())
 
 
-__all__ = ["EXIT_INVALID", "EXIT_OK", "EXIT_OVER_THRESHOLD", "build_parser", "main", "run"]
+__all__ = [
+    "EXIT_INVALID",
+    "EXIT_OK",
+    "EXIT_OVER_THRESHOLD",
+    "build_claims_parser",
+    "build_parser",
+    "claims_main",
+    "main",
+    "run",
+]

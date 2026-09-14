@@ -1,0 +1,142 @@
+{
+  "bs_score_version": "2.2.0",
+  "label": "Bullshit Score",
+  "score": 15,
+  "band": "misleading",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "docs",
+  "target_ref": "examples/fixture-docs/guide.md",
+  "profile": "docs",
+  "profile_description": "Claims-only audit of a document. Nothing but contradictions between what the text says and what exists; a wrong claim is the defining docs failure, so it weighs most.",
+  "weights": {
+    "breaking_bug": 2,
+    "bug": 1,
+    "missing_feature": 3,
+    "security_issue": 3,
+    "wrong_claim": 5
+  },
+  "by_type": {
+    "wrong_claim": 15
+  },
+  "count_by_type": {
+    "wrong_claim": 3
+  },
+  "kept_count": 3,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "baselined_count": 0,
+  "blast_radius": {
+    "mode": "scanned",
+    "tree_files": 4,
+    "files_affected": [
+      "guide.md"
+    ]
+  },
+  "depth": {
+    "status": "not_required",
+    "requires_code_pass": false,
+    "files_read": 0,
+    "code_files_read": 0,
+    "doc_files_read": 0,
+    "missing_files": []
+  },
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-docs",
+    "sources": [],
+    "line_window": 10,
+    "fold_case": false,
+    "require_evidence": false,
+    "strict_lines": false,
+    "require_depth": false,
+    "by_status": {
+      "verified": 3
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "d9fd7c3c061f7f7626034d18787aa7361686d816afa6e5b30bf260dfcfb0d3ff",
+  "schema_sha256": "c68d008427e47f174258203075cecfbfb40228a998941c01b0814a2c27c95dac",
+  "findings_sha256": "8aaf3fc105e39ab829081dc3989e6121ea87daf48967e5e6eda426ee48931d99",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "d1",
+      "type": "wrong_claim",
+      "title": "Guide says Python 3.9; pyproject requires 3.11",
+      "path": "guide.md:9",
+      "quote": "Requires Python 3.9 or newer.",
+      "claim": "poller installs on Python 3.9+",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "69162aac3c58ef9e",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "guide.md",
+          "line": 9
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    },
+    {
+      "id": "d2",
+      "type": "wrong_claim",
+      "title": "Guide names config/poller.yaml; the file is config/poller.yml",
+      "path": "guide.md:18",
+      "quote": "Put your URL list in `config/poller.yaml`",
+      "claim": "configuration lives at config/poller.yaml",
+      "confidence": 0.9,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "de9f6587b7bb2ca5",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "guide.md",
+          "line": 17
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    },
+    {
+      "id": "d3",
+      "type": "wrong_claim",
+      "title": "Guide documents `poller --serve`; the CLI has no such flag",
+      "path": "guide.md:31",
+      "quote": "poller --serve",
+      "claim": "poller has a --serve daemon mode",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "guide.md",
+      "quote_fingerprint": "fa85573703af40d0",
+      "evidence": {
+        "status": "verified",
+        "resolved": "guide.md"
+      },
+      "points": 5,
+      "occurrences": [
+        {
+          "path": "guide.md",
+          "line": 29
+        }
+      ],
+      "occurrence_count": 1,
+      "files_affected": 1
+    }
+  ],
+  "rejected": [],
+  "deduped": [],
+  "baselined": []
+}

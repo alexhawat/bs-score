@@ -4,32 +4,17 @@
   "title": "BsScoreFindings",
   "description": "Contract for LLM-emitted bs_score findings. bs-score enforces this schema in full (types, enums, minLength, numeric bounds, additionalProperties) before scoring.",
   "type": "object",
-  "required": [
-    "version",
-    "target_kind",
-    "findings"
-  ],
+  "required": ["version", "target_kind", "findings"],
   "additionalProperties": false,
   "properties": {
     "version": {
       "type": "integer",
-      "enum": [
-        1,
-        2
-      ],
+      "enum": [1, 2],
       "description": "Payload contract version. 2 is current; 1 is still accepted."
     },
     "target_kind": {
       "type": "string",
-      "enum": [
-        "repo",
-        "pr",
-        "branch",
-        "review",
-        "skill",
-        "agent",
-        "prompt"
-      ],
+      "enum": ["repo", "pr", "branch", "review", "skill", "agent", "prompt", "docs"],
       "description": "Review type. Selects the weight profile in scoring.json."
     },
     "target_ref": {
@@ -37,18 +22,25 @@
       "minLength": 1,
       "description": "Optional locator: repo URL or commit, PR/branch, review id, skill path, agent path, or prompt-set name."
     },
+    "audit": {
+      "type": "object",
+      "description": "Optional proof that the audit went deep. bs-score checks the listed files exist, measures coverage against the tree, and stamps the report 'shallow' when a review type that requires a code pass never read code.",
+      "additionalProperties": false,
+      "required": ["files_read"],
+      "properties": {
+        "files_read": {
+          "type": "array",
+          "description": "Repo-relative paths actually opened during the audit.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    },
     "findings": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "type",
-          "title",
-          "path",
-          "quote",
-          "target"
-        ],
+        "required": ["id", "type", "title", "path", "quote", "target"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -58,18 +50,9 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "breaking_bug",
-              "security_issue",
-              "missing_feature",
-              "bug",
-              "wrong_claim"
-            ]
+            "enum": ["breaking_bug", "security_issue", "missing_feature", "bug", "wrong_claim"]
           },
-          "title": {
-            "type": "string",
-            "minLength": 1
-          },
+          "title": { "type": "string", "minLength": 1 },
           "path": {
             "type": "string",
             "minLength": 1,
@@ -85,6 +68,11 @@
             "minLength": 1,
             "description": "Optional: the stated claim being audited."
           },
+          "cluster": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional root-cause id. Findings sharing (type, cluster) collapse into one scored finding with the rest recorded as merged reports \u2014 so one defect worded several different ways costs its points once."
+          },
           "confidence": {
             "type": "number",
             "minimum": 0,
@@ -93,44 +81,8 @@
           },
           "target": {
             "type": "string",
-            "enum": [
-              "readme",
-              "code",
-              "diff",
-              "review",
-              "skill",
-              "agent",
-              "prompt",
-              "other"
-            ]
-          },
-          "cluster": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Optional root-cause id. Findings sharing (type, cluster) collapse into one scored finding with the rest recorded as occurrences \u2014 so one defect worded several different ways costs its points once."
+            "enum": ["readme", "code", "diff", "review", "skill", "agent", "prompt", "other"]
           }
-        }
-      }
-    },
-    "audit": {
-      "type": "object",
-      "description": "Optional proof that the audit went deep. bs-score checks the listed files exist, measures coverage against the tree, and stamps the report 'shallow' when a review type that requires a code pass never read code.",
-      "additionalProperties": false,
-      "required": [
-        "files_read"
-      ],
-      "properties": {
-        "files_read": {
-          "type": "array",
-          "description": "Repo-relative paths actually opened during the audit.",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "notes": {
-          "type": "string",
-          "minLength": 1
         }
       }
     }

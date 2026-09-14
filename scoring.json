@@ -111,6 +111,23 @@
         "wrong_claim": 3
       }
     },
+    "docs": {
+      "description": "Claims-only audit of a document. Nothing but contradictions between what the text says and what exists; a wrong claim is the defining docs failure, so it weighs most.",
+      "weights": {
+        "breaking_bug": 2,
+        "security_issue": 3,
+        "missing_feature": 3,
+        "bug": 1,
+        "wrong_claim": 5
+      },
+      "type_notes": {
+        "wrong_claim": "A stated fact — path, command, flag, number, version, guarantee — contradicted by what exists",
+        "missing_feature": "A capability the text asserts with nothing behind it",
+        "security_issue": "Text that instructs the reader to do something unsafe",
+        "bug": "Instructions that are present but reliably produce the wrong result",
+        "breaking_bug": "A documented procedure that cannot be completed at all"
+      }
+    },
     "prompt": {
       "description": "One or more prompts (system/developer/tool/persona). Injection surface and secret handling dominate; contradictions and unsupported guarantees are the common defects.",
       "weights": {

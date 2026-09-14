@@ -1,0 +1,12 @@
+[project]
+name = "poller"
+version = "0.4.2"
+description = "Poll URLs on a schedule."
+requires-python = ">=3.11"
+
+[project.scripts]
+poller = "poller.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

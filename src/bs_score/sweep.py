@@ -58,7 +58,7 @@ class _IndexedFile:
     lines: list[int]
 
 
-def _normalize_with_lines(raw: str) -> _IndexedFile:
+def _normalize_with_lines(raw: str, *, fold_case: bool = False) -> _IndexedFile:
     """Normalise a file and keep a map from normalised offset back to line number.
 
     ``normalize_text`` collapses every whitespace run to a single space, so the
@@ -70,7 +70,7 @@ def _normalize_with_lines(raw: str) -> _IndexedFile:
     lines: list[int] = []
     cursor = 0
     for number, line in enumerate(raw.splitlines(), start=1):
-        piece = normalize_text(line)
+        piece = normalize_text(line, fold_case=fold_case)
         if not piece:
             continue
         if text_parts:
@@ -90,8 +90,12 @@ class TreeIndex:
     there are.
     """
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, fold_case: bool = False) -> None:
         self.root = root.resolve()
+        # Must match the verifier: if a quote verified case-insensitively, the
+        # sweep has to find it the same way or a verified finding reports zero
+        # occurrences.
+        self.fold_case = fold_case
         self._files: dict[str, _IndexedFile] | None = None
 
     @property
@@ -146,7 +150,9 @@ class TreeIndex:
                 continue
             if b"\0" in raw[:8192]:
                 continue
-            indexed[relative.as_posix()] = _normalize_with_lines(raw.decode("utf-8", "replace"))
+            indexed[relative.as_posix()] = _normalize_with_lines(
+                raw.decode("utf-8", "replace"), fold_case=self.fold_case
+            )
 
         logger.info("indexed {} text file(s) under {}", len(indexed), self.root)
         self._files = indexed
@@ -159,7 +165,7 @@ class TreeIndex:
             quote: Raw quote text; normalised here so callers need not.
             limit: Stop after this many occurrences.
         """
-        needle = normalize_text(quote)
+        needle = normalize_text(quote, fold_case=self.fold_case)
         if not needle:
             return []
         found: list[Occurrence] = []
