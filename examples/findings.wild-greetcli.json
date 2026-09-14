@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "target_kind": "docs",
+  "target_ref": "greetcli@1.2 (synthetic-but-realistic snapshot)",
+  "findings": [
+    {
+      "id": "w1",
+      "type": "wrong_claim",
+      "title": "README promises Python 3.8; pyproject requires 3.10",
+      "path": "README.md:3",
+      "quote": "Works on Python 3.8 and newer.",
+      "claim": "greetcli runs on Python 3.8+",
+      "confidence": 0.95,
+      "target": "readme"
+    },
+    {
+      "id": "w2",
+      "type": "wrong_claim",
+      "title": "README documents --shout; the CLI has no such flag",
+      "path": "README.md:12",
+      "quote": "`--shout` uppercases the greeting.",
+      "claim": "greet has a --shout flag",
+      "confidence": 0.95,
+      "target": "readme"
+    }
+  ]
+}

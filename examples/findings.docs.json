@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "target_kind": "docs",
+  "target_ref": "examples/fixture-docs/guide.md",
+  "findings": [
+    {
+      "id": "d1",
+      "type": "wrong_claim",
+      "title": "Guide says Python 3.9; pyproject requires 3.11",
+      "path": "guide.md:9",
+      "quote": "Requires Python 3.9 or newer.",
+      "claim": "poller installs on Python 3.9+",
+      "confidence": 0.95,
+      "target": "readme"
+    },
+    {
+      "id": "d2",
+      "type": "wrong_claim",
+      "title": "Guide names config/poller.yaml; the file is config/poller.yml",
+      "path": "guide.md:18",
+      "quote": "Put your URL list in `config/poller.yaml`",
+      "claim": "configuration lives at config/poller.yaml",
+      "confidence": 0.9,
+      "target": "readme"
+    },
+    {
+      "id": "d3",
+      "type": "wrong_claim",
+      "title": "Guide documents `poller --serve`; the CLI has no such flag",
+      "path": "guide.md:31",
+      "quote": "poller --serve",
+      "claim": "poller has a --serve daemon mode",
+      "confidence": 0.95,
+      "target": "readme"
+    }
+  ]
+}

@@ -115,6 +115,7 @@ From a clone, `python3 score.py findings.json` and `uv run bs-score …` do the 
 | `skill` | Skill MD + the code it names | unimplemented claims weigh more |
 | `agent` | Agent / persona configs | unsafe instructions weigh most |
 | `prompt` | One or more prompts | injection and secrets weigh most |
+| `docs` | One document, claims only | wrong claims weigh most |
 
 ## Fixture examples
 

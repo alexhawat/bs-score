@@ -28,6 +28,10 @@ EXAMPLE_INVOCATIONS: dict[str, list[str]] = {
     "skill": ["--repo-root", "examples/fixture-repo"],
     "agent": ["--repo-root", "examples/fixture-repo"],
     "prompt": ["--repo-root", ".", "--sources", "examples/fixture-prompts"],
+    "docs": ["--repo-root", "examples/fixture-docs"],
+    "i18n": ["--repo-root", "examples/fixture-i18n"],
+    "wild-tinycache": ["--repo-root", "examples/in-the-wild/tinycache"],
+    "wild-greetcli": ["--repo-root", "examples/in-the-wild/greetcli"],
     "hallucinated": ["--repo-root", "examples/fixture-repo"],
     "self": ["--repo-root", "."],
 }

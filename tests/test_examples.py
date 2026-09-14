@@ -29,6 +29,10 @@ def test_documented_scores():
         "skill": 7,
         "agent": 6,
         "prompt": 18,
+        "docs": 15,
+        "i18n": 10,
+        "wild-tinycache": 8,
+        "wild-greetcli": 10,
         "hallucinated": 0,
         "self": 0,
     }

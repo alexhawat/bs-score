@@ -7,9 +7,12 @@ import re
 import pytest
 from conftest import REPO
 
-from bs_score.cli import build_parser
+from bs_score.cli import build_claims_parser, build_parser
 
-SKIP_DIRS = {".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build", "fixture-repo"}
+SKIP_DIRS = {
+    ".venv", ".git", ".pytest_cache", ".ruff_cache", "dist", "build",
+    "fixture-repo", "fixture-docs", "fixture-i18n", "tinycache", "greetcli",
+}
 
 MARKDOWN = sorted(
     path for path in REPO.rglob("*.md") if not SKIP_DIRS & set(path.parts)
@@ -34,12 +37,12 @@ def test_relative_links_resolve(document):
 def test_documented_flags_exist(document):
     """Every `--flag` printed in the docs must be a real CLI option."""
     known = set()
-    for action in build_parser()._actions:
+    for action in [*build_parser()._actions, *build_claims_parser()._actions]:
         known.update(action.option_strings)
     # Flags belonging to other tools, or quoted as examples of a *broken* claim.
     ignore = {
         "--from", "--extra", "--wheel", "--python", "--check", "--write",
-        "--prod", "--environment", "--watch", "--no-verify",
+        "--prod", "--environment", "--watch", "--no-verify", "--shout", "--tags",
     }
     text = document.read_text(encoding="utf-8")
     mentioned = set(re.findall(r"(?<![\w-])(--[a-z][a-z0-9-]+)", text))

@@ -17,6 +17,7 @@ from typing import Any
 
 from loguru import logger
 
+from . import baseline as baseline_mod
 from . import locators, schema_validate
 from .evidence import Verdict, Verifier
 from .scoring import Scoring
@@ -33,6 +34,25 @@ class PayloadError(ValueError):
     """The findings envelope is unusable, so no score can be produced."""
 
 
+#: Score bands, display-only. The raw sum is the score; the band is a label for
+#: humans reading a report in isolation. ``(upper_bound, label)``; the last
+#: band is unbounded.
+BANDS: tuple[tuple[int | None, str], ...] = (
+    (0, "clean"),
+    (5, "minor drift"),
+    (15, "misleading"),
+    (None, "bullshit"),
+)
+
+
+def score_band(score: int) -> str:
+    """Display label for a score: 0 clean · 1–5 minor drift · 6–15 misleading · 16+ bullshit."""
+    for upper, label in BANDS:
+        if upper is None or score <= upper:
+            return label
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 @dataclass(frozen=True)
 class Options:
     """Knobs that change a report's meaning, recorded in the receipt."""
@@ -40,6 +60,9 @@ class Options:
     require_evidence: bool = False
     strict_lines: bool = False
     fail_over: int | None = None
+    fold_case: bool = False
+    #: Dedupe keys of accepted findings, loaded from --baseline.
+    baseline: frozenset[tuple[str, str, str]] = frozenset()
 
 
 def _evidence_ok(finding: dict[str, Any], required: tuple[str, ...]) -> str | None:
@@ -106,6 +129,7 @@ def build_report(
     kept: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     deduped: list[dict[str, Any]] = []
+    baselined: list[dict[str, Any]] = []
     by_type: Counter[str] = Counter()
     count_by_type: Counter[str] = Counter()
     evidence_counts: Counter[str] = Counter()
@@ -152,7 +176,9 @@ def build_report(
             continue
 
         locator = locators.parse(str(finding["path"]))
-        fingerprint = locators.quote_fingerprint(str(finding["quote"]))
+        fingerprint = locators.quote_fingerprint(
+            str(finding["quote"]), fold_case=options.fold_case
+        )
         key = _dedupe_key(finding, locator, fingerprint, scoring)
 
         target_index = seen_keys.get(key)
@@ -172,6 +198,22 @@ def build_report(
                     "finding": finding,
                 }
             )
+            continue
+
+        if baseline_mod.key_of(
+            {"type": finding["type"], "canonical_file": locator.ref,
+             "quote_fingerprint": fingerprint}
+        ) in options.baseline:
+            baselined.append(
+                {
+                    **finding,
+                    "canonical_file": locator.ref,
+                    "quote_fingerprint": fingerprint,
+                    "evidence": verdict.as_dict(),
+                }
+            )
+            # Not registered in seen_keys: an identical later finding is
+            # baselined on its own key, not merged into this one.
             continue
 
         points = profile.points(str(finding["type"]))
@@ -198,6 +240,7 @@ def build_report(
         "bs_score_version": __version__,
         "label": scoring.label,
         "score": total,
+        "band": score_band(total),
         "verdict": verdict_label,
         "fail_over": options.fail_over,
         "target_kind": target_kind,
@@ -210,11 +253,13 @@ def build_report(
         "kept_count": len(kept),
         "rejected_count": len(rejected),
         "deduped_count": len(deduped),
+        "baselined_count": len(baselined),
         "evidence": {
             "mode": "verified" if verifier.enabled else "skipped",
             "repo_root": verifier.given_root.as_posix() if verifier.given_root else None,
             "sources": verifier.sources.ids,
             "line_window": verifier.line_window,
+            "fold_case": options.fold_case,
             "require_evidence": options.require_evidence,
             "strict_lines": options.strict_lines,
             "by_status": dict(sorted(evidence_counts.items())),
@@ -227,6 +272,7 @@ def build_report(
         "kept": kept,
         "rejected": rejected,
         "deduped": deduped,
+        "baselined": baselined,
     }
     logger.info(
         "score {} ({} kept, {} rejected, {} deduped)",
@@ -247,12 +293,12 @@ def sha256_of_document(document: Any) -> str:
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
     lines = [
-        f"## {report['label']}: **{report['score']}**",
+        f"## {report['label']}: **{report['score']}** ({report['band']})",
         "",
         f"- review type: `{report['target_kind']}` (profile `{report['profile']}`)",
         f"- target: `{report.get('target_ref') or 'unspecified'}`",
         f"- kept {report['kept_count']} · rejected {report['rejected_count']} "
-        f"· deduped {report['deduped_count']}",
+        f"· deduped {report['deduped_count']} · baselined {report['baselined_count']}",
         f"- evidence: {report['evidence']['mode']} "
         f"({', '.join(f'{k} {v}' for k, v in report['evidence']['by_status'].items()) or 'n/a'})",
         f"- scoring `{report['scoring_sha256'][:12]}` · schema `{report['schema_sha256'][:12]}`",
@@ -279,10 +325,16 @@ def render_markdown(report: dict[str, Any]) -> str:
             label = entry.get("id", entry["index"])
             lines.append(f"- `{label}` — {entry['reason']}: {entry['detail']}")
         lines.append("")
+    if report["baselined"]:
+        lines += ["### Baselined (accepted, not scored)", ""]
+        for finding in report["baselined"]:
+            lines.append(f"- `{finding['id']}` — {finding['title']} (`{finding['path']}`)")
+        lines.append("")
     return "\n".join(lines)
 
 
 __all__ = [
+    "BANDS",
     "CROSS_PATH_DUPLICATE",
     "DUPLICATE",
     "MISSING_EVIDENCE",
@@ -293,5 +345,6 @@ __all__ = [
     "UNVERIFIED_EVIDENCE",
     "build_report",
     "render_markdown",
+    "score_band",
     "sha256_of_document",
 ]

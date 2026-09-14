@@ -50,13 +50,13 @@ Per-runtime wrappers: [`agents/`](agents/).
   because a defect about to land in a PR and a stale sentence in a README are
   not the same failure. Weights come only from `scoring.json`:
 
-| type | `repo` | `pr` `branch` | `review` | `skill` | `agent` | `prompt` |
-|------|-------:|--------------:|---------:|--------:|--------:|---------:|
-| `breaking_bug` | 5 | 6 | 6 | 5 | 4 | 4 |
-| `security_issue` | 4 | 5 | 5 | 4 | 5 | 5 |
-| `missing_feature` | 3 | 2 | 3 | 4 | 3 | 2 |
-| `bug` | 3 | 3 | 4 | 3 | 2 | 3 |
-| `wrong_claim` | 2 | 2 | 3 | 3 | 3 | 3 |
+| type | `repo` | `pr` `branch` | `review` | `skill` | `agent` | `prompt` | `docs` |
+|------|-------:|--------------:|---------:|--------:|--------:|---------:|-------:|
+| `breaking_bug` | 5 | 6 | 6 | 5 | 4 | 4 | 2 |
+| `security_issue` | 4 | 5 | 5 | 4 | 5 | 5 | 3 |
+| `missing_feature` | 3 | 2 | 3 | 4 | 3 | 2 | 3 |
+| `bug` | 3 | 3 | 4 | 3 | 2 | 3 | 1 |
+| `wrong_claim` | 2 | 2 | 3 | 3 | 3 | 3 | 5 |
 
 - **Evidence is verified, not assumed.** `path` must resolve and `quote` must
   appear in the artifact (whitespace- and typography-normalised). If it does not:
@@ -78,6 +78,7 @@ Per-runtime wrappers: [`agents/`](agents/).
 | `skill` | A skill pack: `SKILL.md` **and** the scripts it names | [skill](checklists/skill.md) |
 | `agent` | Agent/persona configs under `.cursor/`, `.claude/`, `AGENTS.md`, … | [agent](checklists/agent.md) |
 | `prompt` | One or many prompts: system, developer, tool, persona | [prompt](checklists/prompt.md) |
+| `docs` | A single document — claims only, no deep code pass | [docs](checklists/docs.md) |
 
 ## Workflow
 
@@ -111,7 +112,7 @@ bs-score findings.json --sources prompts/                   # a directory
 bs-score findings.json --repo-root . --sources review.json  # {id, text} manifest
 ```
 
-Install options are in the [README](README.md#install).
+Install options are in the [README](README.md).
 
 7. **Report only what the script printed**: `score`, `by_type`, `kept` /
    `rejected` / `deduped`, and the paths of the kept findings. `--format md`
@@ -150,6 +151,9 @@ at a wrong line is kept and flagged `verified_wrong_line` (and rejected under
 - Findings JSON must not contain `score` or `points`; the payload is rejected.
 - Quotes are contiguous and verbatim. No ellipses, no paraphrase, no reflowing
   that changes the words.
+- Quotes stay verbatim in the artifact's own language — never translate a
+  quote. Finding titles may be in any language; the checklists are
+  language-agnostic.
 - Do not treat rejected findings as scored.
 - Prefer fewer high-evidence findings over speculative noise — but a docs-only
   audit is **incomplete** for `repo` / `pr` / `branch` / `skill`.

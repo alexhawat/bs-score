@@ -1,7 +1,8 @@
 {
-  "bs_score_version": "2.0.0",
+  "bs_score_version": "2.1.0",
   "label": "Bullshit Score",
   "score": 17,
+  "band": "bullshit",
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "repo",
@@ -32,11 +33,13 @@
   "kept_count": 5,
   "rejected_count": 1,
   "deduped_count": 1,
+  "baselined_count": 0,
   "evidence": {
     "mode": "verified",
     "repo_root": "examples/fixture-repo",
     "sources": [],
     "line_window": 10,
+    "fold_case": false,
     "require_evidence": false,
     "strict_lines": false,
     "by_status": {
@@ -44,8 +47,8 @@
     }
   },
   "scoring_version": 2,
-  "scoring_sha256": "1b6cf04ddfef6e269fa079a19d7bc1cd4ea831dc3f429b8d47bd12ac226f6e06",
-  "schema_sha256": "b7c2c5c61eab3d5a4a3a9d2ddb605455b6350519f4d6bea37c64541dd0950f73",
+  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
+  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
   "findings_sha256": "0536c40539f591a107eb492d7097c1f53c811c9d0aadee17b7778756c9b12ba0",
   "confidence_affects_score": false,
   "kept": [
@@ -171,5 +174,6 @@
         "target": "code"
       }
     }
-  ]
+  ],
+  "baselined": []
 }

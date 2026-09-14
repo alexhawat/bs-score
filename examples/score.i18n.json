@@ -1,0 +1,85 @@
+{
+  "bs_score_version": "2.1.0",
+  "label": "Bullshit Score",
+  "score": 10,
+  "band": "misleading",
+  "verdict": "pass",
+  "fail_over": null,
+  "target_kind": "docs",
+  "target_ref": "examples/fixture-i18n",
+  "profile": "docs",
+  "profile_description": "Claims-only audit of a document. Nothing but contradictions between what the text says and what exists; a wrong claim is the defining docs failure, so it weighs most.",
+  "weights": {
+    "breaking_bug": 2,
+    "bug": 1,
+    "missing_feature": 3,
+    "security_issue": 3,
+    "wrong_claim": 5
+  },
+  "by_type": {
+    "wrong_claim": 10
+  },
+  "count_by_type": {
+    "wrong_claim": 2
+  },
+  "kept_count": 2,
+  "rejected_count": 0,
+  "deduped_count": 0,
+  "baselined_count": 0,
+  "evidence": {
+    "mode": "verified",
+    "repo_root": "examples/fixture-i18n",
+    "sources": [],
+    "line_window": 10,
+    "fold_case": false,
+    "require_evidence": false,
+    "strict_lines": false,
+    "by_status": {
+      "verified": 2
+    }
+  },
+  "scoring_version": 2,
+  "scoring_sha256": "cdcc7d396188e15b90f763f591c30f767da1484065bcdb355503131470c1d13b",
+  "schema_sha256": "550fe7038a61b34d6ff27d43015f3d50b7fdd4e07c985bcd07b67e1d296d3e6d",
+  "findings_sha256": "beaf99a236b8ca8ab9d73e25aea010cb3a134b7e7b263b0a9b44f24adddb3949",
+  "confidence_affects_score": false,
+  "kept": [
+    {
+      "id": "fr-1",
+      "type": "wrong_claim",
+      "title": "README.fr nomme config/app.yaml ; le fichier est config/app.yml",
+      "path": "README.fr.md:9",
+      "quote": "Le fichier de configuration est `config/app.yaml`.",
+      "claim": "la configuration est dans config/app.yaml",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "README.fr.md",
+      "quote_fingerprint": "6bfa35e86afd194c",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.fr.md"
+      },
+      "points": 5
+    },
+    {
+      "id": "ja-1",
+      "type": "wrong_claim",
+      "title": "README.ja は scripts/lancer.sh を促すが、実在するのは scripts/run.sh",
+      "path": "README.ja.md:12",
+      "quote": "`scripts/lancer.sh` を実行して起動します。",
+      "claim": "起動スクリプトは scripts/lancer.sh",
+      "confidence": 0.95,
+      "target": "readme",
+      "canonical_file": "README.ja.md",
+      "quote_fingerprint": "8dbd6456a0600047",
+      "evidence": {
+        "status": "verified",
+        "resolved": "README.ja.md"
+      },
+      "points": 5
+    }
+  ],
+  "rejected": [],
+  "deduped": [],
+  "baselined": []
+}

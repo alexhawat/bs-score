@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "target_kind": "repo",
+  "target_ref": "tinycache@0.9 (synthetic-but-realistic snapshot)",
+  "findings": [
+    {
+      "id": "w1",
+      "type": "wrong_claim",
+      "title": "Claims a lock per operation; there is no locking anywhere",
+      "path": "README.md:7",
+      "quote": "Thread-safe by design — every operation holds a lock",
+      "claim": "tinycache is thread-safe",
+      "confidence": 0.9,
+      "target": "readme"
+    },
+    {
+      "id": "w2",
+      "type": "missing_feature",
+      "title": "LRU eviction advertised; the cache grows without bound",
+      "path": "README.md:8",
+      "quote": "LRU eviction when the cache is full",
+      "claim": "full caches evict least-recently-used entries",
+      "confidence": 0.85,
+      "target": "readme"
+    },
+    {
+      "id": "w3",
+      "type": "missing_feature",
+      "title": "TTL advertised; the ttl argument is accepted and ignored",
+      "path": "README.md:9",
+      "quote": "TTL support: entries expire automatically",
+      "claim": "entries expire after ttl seconds",
+      "confidence": 0.85,
+      "target": "readme"
+    }
+  ]
+}

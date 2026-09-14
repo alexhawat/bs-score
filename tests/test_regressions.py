@@ -37,9 +37,13 @@ def test_wrapper_documents_a_clone_local_command(agent_dir):
     assert "uv run bs-score findings.json" in text
 
 
-UNPINNED_UVX = re.compile(
-    r"uvx\s+--from\s+[\"\']?git\+https://github\.com/alexhawat/bs_score(?!@)"
-)
+# Since v2.0.0 the default branch carries pyproject.toml, so the one-line
+# install `uvx --from git+https://github.com/alexhawat/bs_score bs-score` is a
+# true claim. What would be a false claim is `uvx bs-score` (no --from), which
+# needs the PyPI release. The uvx-install CI job proves both directions by
+# running the real command against the commit under test.
+
+UNPUBLISHED_UVX = re.compile(r"(?<![\w-])uvx\s+bs-score\b")
 
 DOCS = sorted(
     path
@@ -49,25 +53,23 @@ DOCS = sorted(
 
 
 @pytest.mark.parametrize("document", [*DOCS, REPO / "score.py"], ids=lambda p: p.name)
-def test_docs_never_print_an_unpinned_uvx_git_install(document):
-    """`uvx --from git+<repo>` with no `@ref` resolves the DEFAULT branch.
+def test_docs_never_print_an_unreleased_pypi_install(document):
+    """`uvx bs-score` (no --from) installs from PyPI, which has not happened.
 
-    While `main` has no `pyproject.toml`, that command fails with "does not
-    appear to be a Python project" — so printing it as a runnable command is a
-    false claim. This is a static check only: that the published ref is really
-    installable is proven by the `uvx-install` CI job, which runs the real
-    command against the commit under test.
+    Docs may promise it only as future tense ("after the PyPI release …"),
+    never as a command that works today.
     """
-    matches = UNPINNED_UVX.findall(document.read_text(encoding="utf-8"))
-    assert matches == [], f"{document.name} prints an unpinned uvx git install"
+    for line in document.read_text(encoding="utf-8").splitlines():
+        if UNPUBLISHED_UVX.search(line):
+            assert "pypi" in line.lower() or "release" in line.lower(), (
+                f"{document.name} prints `uvx bs-score` as runnable today: {line.strip()}"
+            )
 
 
-def test_readme_documents_the_ref_requirement():
-    """Static check: the README states that the git install needs a ref with a
-    pyproject.toml, rather than implying the bare repo URL works."""
+def test_readme_prints_the_one_line_install():
+    """The one-line install must be exactly the command CI proves installable."""
     readme = (REPO / "README.md").read_text(encoding="utf-8")
-    assert "the ref must" in readme.lower()
-    assert "pyproject.toml" in readme
+    assert "uvx --from git+https://github.com/alexhawat/bs_score bs-score" in readme
 
 
 def test_the_console_script_the_docs_tell_you_to_run_exists():
@@ -124,7 +126,9 @@ def test_validation_enforces_confidence_range():
 
 
 @pytest.mark.parametrize(
-    "name", ["valid", "review", "skill", "agent", "prompt", "hallucinated", "self"]
+    "name",
+    ["valid", "review", "skill", "agent", "prompt", "docs", "i18n",
+     "wild-tinycache", "wild-greetcli", "hallucinated", "self"],
 )
 def test_every_example_payload_is_schema_valid(name, schema):
     jsonschema = pytest.importorskip("jsonschema")
