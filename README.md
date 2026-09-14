@@ -4,8 +4,8 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![python: 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 
-**Your AI auditor lies. bs_score catches it — every claim is quoted, every quote
-is verified, and the score comes from code, not prose.**
+**AI lies, sometimes people. bs_score catches it — every claim is quoted, every quote
+is verified, and the score comes from code, not prose. Use it to catch bullshit in repo (readme vs code), PR, PR review, skills, agents and more.**
 
 The LLM *finds* defects and quotes the evidence. The `bs-score` CLI *verifies
 every quote against the artifact it names*, then scores what survived. Higher =
