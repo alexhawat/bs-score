@@ -1,12 +1,12 @@
-# bs_score — OpenCode
+# bs-score — OpenCode
 
 Wrapper for **OpenCode**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.config/opencode/skills/bs_score` (personal) or `.opencode/skills/bs_score` (project). OpenCode also reads `.claude/skills/` and `.agents/skills/`.
+Skills folder: `~/.config/opencode/skills/bs-score` (personal) or `.opencode/skills/bs-score` (project). OpenCode also reads `.claude/skills/` and `.agents/skills/`.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.config/opencode/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.config/opencode/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

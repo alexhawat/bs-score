@@ -1,5 +1,5 @@
 ---
-name: bs_score
+name: bs-score
 description: >-
   Use when auditing a repo, PR, branch, PR review, AI skill, agent config, or one
   or more prompts for claims vs truth and real defects: emit findings JSON with a
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
-# Bullshit Score (`bs_score`)
+# Bullshit Score (`bs-score`)
 
 You **find** defects and quote the evidence. `bs-score` **verifies every quote
 against the artifact it names** and then scores what survived. A finding whose
@@ -30,7 +30,7 @@ approve a tool, `Bash` is the only one that runs anything.
 ## Layout
 
 ```text
-bs_score/
+bs-score/
 ├── SKILL.md              # this recipe
 ├── checklists/           # one per review type — read the one you need
 ├── scoring.json          # review type → weights (source of truth)

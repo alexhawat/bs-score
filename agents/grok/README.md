@@ -1,12 +1,12 @@
-# bs_score — Grok Build
+# bs-score — Grok Build
 
 Wrapper for **Grok Build**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.grok/skills/bs_score` (personal) or `.grok/skills/bs_score` (project). Grok Build also reads `.claude/skills/` and `.agents/skills/`.
+Skills folder: `~/.grok/skills/bs-score` (personal) or `.grok/skills/bs-score` (project). Grok Build also reads `.claude/skills/` and `.agents/skills/`.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.grok/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.grok/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

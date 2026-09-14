@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "bs_score",
+  "name": "bs-score",
   "label": "Bullshit Score",
   "description": "Deterministic Bullshit Score. One score, per-review-type weights. Starts at 0; higher means more bullshit.",
   "default_profile": "repo",

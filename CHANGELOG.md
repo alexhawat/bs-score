@@ -6,6 +6,25 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **The skill is named `bs-score`**, matching the CLI, the distribution and the
+  convention every runtime's own examples follow. Its folder is
+  `~/.claude/skills/bs-score` (and the equivalent elsewhere), and the `name:`
+  frontmatter matches. Identifiers keep their underscore because they must: the
+  Python package is `bs_score`, and so are the JSON keys it emits
+  (`bs_score_version`, the SARIF `bs_score` property).
+- `scoring.json` carries `"name": "bs-score"`, so `scoring_sha256` changes and
+  every receipt is regenerated. Weights are untouched — no score moves.
+
+### Added
+
+- **`bs-score claims --ignore GLOB`** (repeatable) for spans that are not claims
+  about the tree: a file a command writes at runtime, a version a changelog
+  records, an install destination. Matched claims are reported as `skip` naming
+  the pattern rather than dropped, and the report now carries each claim's
+  `span` so there is something to point the pattern at.
+
 ### Fixed
 
 - **`--write-baseline` writes everything the run accepted**, `kept` *and*
@@ -41,6 +60,19 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `.pre-commit-hooks.yaml` documented a `rev:` pinned to a release tag this repo
   has never had, and no `files:` filter — so pre-commit handed the hook every
   staged JSON and it failed with "unrecognized arguments".
+- **`claims` counted version numbers inside URLs.** A link to
+  `semver.org/spec/v2.0.0.html` was read as a claim that this project is at
+  2.0.0. Versions inside a URL or a Markdown link target are addresses, not
+  claims.
+- **`claims` read a GitHub owner/repo slug as a repository path.** When the
+  document itself addresses it as `github.com/owner/repo`, it is a repo, and the
+  check is reported as `skip` with that as the evidence.
+- **`claims` read a scheme-less URL as a path.** A backticked
+  `semver.org/spec/...` is an address; a first segment shaped like a hostname is
+  no longer a directory in this tree. A leading dot still marks a real path, so
+  `.github/workflows/ci.yml` is checked as before.
+- Together those two, plus `--ignore`, bring `CHANGELOG.md` into the claims
+  dogfood test for the first time — it could not be checked at all before.
 
 ## [2.2.0] - 2026-09-14
 

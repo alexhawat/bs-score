@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/alexhawat/bs_score/blob/main/findings.schema.json",
   "title": "BsScoreFindings",
-  "description": "Contract for LLM-emitted bs_score findings. bs-score enforces this schema in full (types, enums, minLength, numeric bounds, additionalProperties) before scoring.",
+  "description": "Contract for LLM-emitted bs-score findings. bs-score enforces this schema in full (types, enums, minLength, numeric bounds, additionalProperties) before scoring.",
   "type": "object",
   "required": ["version", "target_kind", "findings"],
   "additionalProperties": false,

@@ -1,12 +1,12 @@
-# bs_score — Cursor
+# bs-score — Cursor
 
 Wrapper for **Cursor**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.cursor/skills/bs_score` (personal) or `.cursor/skills/bs_score` (project). Cursor also reads `.agents/skills/` inside the repository.
+Skills folder: `~/.cursor/skills/bs-score` (personal) or `.cursor/skills/bs-score` (project). Cursor also reads `.agents/skills/` inside the repository.
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.cursor/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.cursor/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

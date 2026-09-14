@@ -1,12 +1,12 @@
-# bs_score — Claude Code
+# bs-score — Claude Code
 
 Wrapper for **Claude Code**. Canonical skill and scorer:
 [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
 
-Skills folder: `~/.claude/skills/bs_score` (personal) or `.claude/skills/bs_score` (project).
+Skills folder: `~/.claude/skills/bs-score` (personal) or `.claude/skills/bs-score` (project).
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs_score
+git clone --depth 1 https://github.com/alexhawat/bs_score ~/.claude/skills/bs-score
 uv tool install git+https://github.com/alexhawat/bs_score   # the bs-score command
 ```
 

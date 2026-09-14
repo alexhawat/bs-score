@@ -1,6 +1,6 @@
-# bs_score
+# bs-score
 
-> Your AI auditor lies. bs_score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
+> Your AI auditor lies. bs-score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
 
 Install (no clone): `uvx --from git+https://github.com/alexhawat/bs_score bs-score --help`
 

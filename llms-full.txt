@@ -1,6 +1,6 @@
-# bs_score — full context for agents
+# bs-score — full context for agents
 
-Your AI auditor lies. bs_score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
+Your AI auditor lies. bs-score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
 
 Install (no clone): `uvx --from git+https://github.com/alexhawat/bs_score bs-score --help`
 
@@ -12,7 +12,7 @@ SKILL.md (verbatim)
 ================================================================================
 
 ---
-name: bs_score
+name: bs-score
 description: >-
   Use when auditing a repo, PR, branch, PR review, AI skill, agent config, or one
   or more prompts for claims vs truth and real defects: emit findings JSON with a
@@ -21,7 +21,7 @@ allowed-tools: Read, Grep, Glob, Bash
 license: MIT
 ---
 
-# Bullshit Score (`bs_score`)
+# Bullshit Score (`bs-score`)
 
 You **find** defects and quote the evidence. `bs-score` **verifies every quote
 against the artifact it names** and then scores what survived. A finding whose
@@ -43,7 +43,7 @@ approve a tool, `Bash` is the only one that runs anything.
 ## Layout
 
 ```text
-bs_score/
+bs-score/
 ├── SKILL.md              # this recipe
 ├── checklists/           # one per review type — read the one you need
 ├── scoring.json          # review type → weights (source of truth)
@@ -274,5 +274,6 @@ CLI surface (rendered from the argparse definitions)
 - `--repo-root` — Tree that paths and packaging metadata resolve against (default: .)
 - `--check-links` — Also fetch http(s) link targets (off by default; needs network)
 - `--emit-findings` — Emit a findings payload (target_kind=docs) of the failed checks, ready to score with: bs-score findings.json --repo-root .
+- `--ignore` — Path-like spans that are not claims about this tree: runtime artifacts a command writes (report.*), illustrative examples. Reported as 'skip' with the pattern named, never dropped. Repeatable.
 - `-v, --verbose` — Repeat for more logs
 - `-q, --quiet` — Silence logging
