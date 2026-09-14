@@ -53,7 +53,10 @@ def main() -> int:
             fabricated["verdict"] == "not_valid"
             and fabricated["score"] is None
             and fabricated["kept_count"] == 0,
-            f"verdict={fabricated['verdict']} score={fabricated['score']} kept={fabricated['kept_count']}",
+            (
+                f"verdict={fabricated['verdict']} score={fabricated['score']} "
+                f"kept={fabricated['kept_count']}"
+            ),
         )
     )
 
@@ -64,7 +67,10 @@ def main() -> int:
             self_audit["verdict"] == "not_valid"
             and self_audit["score"] is None
             and self_audit["rejected_count"] == 8,
-            f"verdict={self_audit['verdict']} score={self_audit['score']} rejected={self_audit['rejected_count']}",
+            (
+                f"verdict={self_audit['verdict']} score={self_audit['score']} "
+                f"rejected={self_audit['rejected_count']}"
+            ),
         )
     )
 

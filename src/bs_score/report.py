@@ -403,7 +403,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
     evidence = report["evidence"]
     statuses = ", ".join(f"{k} {v}" for k, v in evidence["by_status"].items()) or "n/a"
-    score_display = report["band"] if report.get("verdict") == NOT_VALID_VERDICT else report["score"]
+    if report.get("verdict") == NOT_VALID_VERDICT:
+        score_display = report["band"]
+    else:
+        score_display = report["score"]
     lines = [
         f"## {report['label']}: **{score_display}** ({report['band']})",
         "",
