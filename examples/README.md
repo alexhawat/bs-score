@@ -23,7 +23,7 @@ uv run bs-score findings.agent.json  --repo-root fixture-repo                   
 uv run bs-score findings.prompt.json --sources fixture-prompts                    # 18
 uv run bs-score findings.docs.json   --repo-root fixture-docs                     # 15
 uv run bs-score findings.i18n.json   --repo-root fixture-i18n                     # 10
-uv run bs-score findings.hallucinated.json --repo-root fixture-repo               # 0
+uv run bs-score findings.hallucinated.json --repo-root fixture-repo               # NOT_VALID
 ```
 
 (The committed receipts are produced from the repository root — see

@@ -336,5 +336,5 @@ def _score(payload, root="."):
         text=True,
         cwd=REPO,
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode in (0, 3), result.stderr
     return json.loads(result.stdout)

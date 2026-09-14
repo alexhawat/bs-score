@@ -6,7 +6,7 @@
 
 **An LLM finds the defects and quotes the evidence. The `bs-score` CLI verifies
 every quote against the artifact it names, then scores what survived.** Higher =
-more bullshit. A fabricated audit scores **0**, because none of its quotes exist.
+more bullshit. A fabricated audit is **NOT_VALID** (not a clean 0), because none of its quotes verified.
 
 Point it at a repo (README vs code), a PR, a PR review, a skill, an agent config,
 or a prompt.
@@ -76,7 +76,7 @@ An auditor that made everything up, scored from a clone
 
 ```console
 $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo --format md
-## Bullshit Score: **0** (clean)
+## Bullshit Score: **NOT_VALID** (NOT_VALID)
 
 - review type: `repo` (profile `repo`)
 - target: `examples/fixture-repo (fabricated audit)`
@@ -136,7 +136,7 @@ Markdown links, and fenced code blocks are checked deterministically, and
 
 | Mechanism | What it stops |
 |-----------|---------------|
-| **Evidence verification** | A quote not present in the named artifact is rejected before scoring — fabricated findings contribute 0, so padding an audit with hallucinations earns nothing. |
+| **Evidence verification** | A quote not present in the named artifact is rejected before scoring. If findings were submitted but **nothing verified**, the run is **NOT_VALID** — not a clean score of 0. |
 | **Content-addressed dedupe** | `(type, canonical file, quote fingerprint)` is one finding, whether filed as `src/a.py:10`, `./src/a.py:11`, or copy-pasted into seven files. |
 | **Pinned weights** | Custom weights need `--allow-custom-scoring`; every report carries `scoring_sha256` + `schema_sha256`, and receipts reproduce byte-for-byte in CI. |
 | **Full schema enforcement** | Types, enums, `minLength`, numeric bounds — cross-checked against `jsonschema`; one malformed finding is rejected on its own. |
@@ -186,7 +186,7 @@ artifacts the quotes point at live under `examples/`.
 | `findings.valid.json` | `repo` | **17** | README lies + real bugs; one duplicate merged, one blank-evidence finding rejected |
 | `findings.blast.json` | `repo` | **5** | One root cause reported three ways — merged, then counted across every file it reaches |
 | `findings.shallow.json` | `repo` | **2** | A docs-only pass that also claims to have read a file that does not exist |
-| `findings.hallucinated.json` | `repo` | **0** | Four confident fabrications, all rejected |
+| `findings.hallucinated.json` | `repo` | **NOT_VALID** | Four confident fabrications, all rejected |
 
 ```bash
 bs-score examples/findings.valid.json   --repo-root examples/fixture-repo

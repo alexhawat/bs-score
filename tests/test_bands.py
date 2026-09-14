@@ -44,7 +44,27 @@ def test_markdown_report_shows_the_band(capsys):
     assert out.startswith("## Bullshit Score: **17** (bullshit)")
 
 
-def test_clean_audit_is_labelled_clean(capsys):
-    main([str(EXAMPLES / "findings.hallucinated.json"), *ROOT, "-q"])
+def test_all_unverified_is_not_valid(capsys):
+    from bs_score.cli import EXIT_NOT_VALID
+
+    code = main([str(EXAMPLES / "findings.hallucinated.json"), *ROOT, "-q"])
+    assert code == EXIT_NOT_VALID
     report = json.loads(capsys.readouterr().out)
+    assert report["score"] is None
+    assert report["band"] == "NOT_VALID"
+    assert report["verdict"] == "not_valid"
+
+
+def test_empty_findings_still_score_zero(capsys, tmp_path):
+    """Empty findings [] is a real clean 0 — distinct from all-unverified."""
+    findings = tmp_path / "empty.json"
+    findings.write_text(
+        '{"version": 2, "target_kind": "repo", "target_ref": "empty", "findings": []}\n',
+        encoding="utf-8",
+    )
+    code = main([str(findings), *ROOT, "-q"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["score"] == 0
     assert report["band"] == "clean"
+    assert report["verdict"] == "pass"

@@ -102,7 +102,8 @@ def test_unknown_prompt_id_is_rejected_not_ignored(capsys, tmp_path):
     findings.write_text(json.dumps(payload))
     _, out = run([str(findings), "--sources", str(FIXTURE_PROMPTS)], capsys)
     report = json.loads(out)
-    assert report["score"] == 0
+    assert report["score"] is None
+    assert report["verdict"] == "not_valid"
     assert report["rejected"][0]["reason"] == "unverified_evidence"
 
 
@@ -128,7 +129,9 @@ def test_strict_lines_rejects_a_real_quote_at_the_wrong_line(capsys, tmp_path):
     assert json.loads(out)["kept"][0]["evidence"]["status"] == "verified_wrong_line"
 
     _, out = run([str(findings), *ROOT, "--strict-lines"], capsys)
-    assert json.loads(out)["score"] == 0
+    report = json.loads(out)
+    assert report["score"] is None
+    assert report["verdict"] == "not_valid"
 
 
 def test_paths_outside_the_root_are_rejected(capsys, tmp_path):
@@ -150,7 +153,8 @@ def test_paths_outside_the_root_are_rejected(capsys, tmp_path):
     findings.write_text(json.dumps(payload))
     _, out = run([str(findings), *ROOT], capsys)
     report = json.loads(out)
-    assert report["score"] == 0
+    assert report["score"] is None
+    assert report["verdict"] == "not_valid"
     assert "outside_root" in report["rejected"][0]["detail"] or "path_not_found" in report[
         "rejected"
     ][0]["detail"]
