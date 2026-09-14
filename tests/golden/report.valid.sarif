@@ -7,7 +7,7 @@
         "driver": {
           "name": "bs-score",
           "version": "2.2.0",
-          "informationUri": "https://github.com/alexhawat/bs_score",
+          "informationUri": "https://github.com/alexhawat/bs-score",
           "rules": [
             {
               "id": "breaking_bug",

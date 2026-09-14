@@ -2,29 +2,29 @@
 
 > Your AI auditor lies. bs-score catches it — every claim is quoted, every quote is verified, and the score comes from code, not prose. The LLM finds defects and quotes the evidence; the bs-score CLI verifies every quote against the artifact it names, then scores what survived. Higher = more bullshit.
 
-Install (no clone): `uvx --from git+https://github.com/alexhawat/bs_score bs-score --help`
+Install (no clone): `uvx --from git+https://github.com/alexhawat/bs-score bs-score --help`
 
 ## Canonical
 
-- [SKILL.md](https://raw.githubusercontent.com/alexhawat/bs_score/main/SKILL.md): the agent recipe — workflow, finding object, hard rules
-- [findings.schema.json](https://raw.githubusercontent.com/alexhawat/bs_score/main/findings.schema.json): the findings contract, enforced in full
-- [scoring.json](https://raw.githubusercontent.com/alexhawat/bs_score/main/scoring.json): the pinned per-review-type weights
+- [SKILL.md](https://raw.githubusercontent.com/alexhawat/bs-score/main/SKILL.md): the agent recipe — workflow, finding object, hard rules
+- [findings.schema.json](https://raw.githubusercontent.com/alexhawat/bs-score/main/findings.schema.json): the findings contract, enforced in full
+- [scoring.json](https://raw.githubusercontent.com/alexhawat/bs-score/main/scoring.json): the pinned per-review-type weights
 
 ## Checklists (one per review type)
 
-- [repo](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/repo.md): README claims + deep code pass
-- [pr](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/pr.md): a diff and its callers (also `branch`)
-- [review](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/review.md): a PR review graded against the diff
-- [skill](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/skill.md): SKILL.md + every script it names
-- [agent](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/agent.md): agent/persona configs
-- [prompt](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/prompt.md): one or many prompts
-- [docs](https://raw.githubusercontent.com/alexhawat/bs_score/main/checklists/docs.md): one document, claims only
+- [repo](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/repo.md): README claims + deep code pass
+- [pr](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/pr.md): a diff and its callers (also `branch`)
+- [review](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/review.md): a PR review graded against the diff
+- [skill](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/skill.md): SKILL.md + every script it names
+- [agent](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/agent.md): agent/persona configs
+- [prompt](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/prompt.md): one or many prompts
+- [docs](https://raw.githubusercontent.com/alexhawat/bs-score/main/checklists/docs.md): one document, claims only
 
 ## Examples
 
-- [examples/](https://raw.githubusercontent.com/alexhawat/bs_score/main/examples/README.md): worked findings + byte-exact score receipts
-- [hallucinated](https://raw.githubusercontent.com/alexhawat/bs_score/main/examples/findings.hallucinated.json): a fabricated audit scores 0
+- [examples/](https://raw.githubusercontent.com/alexhawat/bs-score/main/examples/README.md): worked findings + byte-exact score receipts
+- [hallucinated](https://raw.githubusercontent.com/alexhawat/bs-score/main/examples/findings.hallucinated.json): a fabricated audit scores 0
 
 ## Full context
 
-- [llms-full.txt](https://raw.githubusercontent.com/alexhawat/bs_score/main/llms-full.txt): everything above, flattened into one file
+- [llms-full.txt](https://raw.githubusercontent.com/alexhawat/bs-score/main/llms-full.txt): everything above, flattened into one file

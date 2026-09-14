@@ -36,10 +36,10 @@ bs-score = "bs_score.cli:run"
 bs-score-mcp = "bs_score.mcp_server:run"
 
 [project.urls]
-Homepage = "https://github.com/alexhawat/bs_score"
-Source = "https://github.com/alexhawat/bs_score"
-Issues = "https://github.com/alexhawat/bs_score/issues"
-Changelog = "https://github.com/alexhawat/bs_score/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/alexhawat/bs-score"
+Source = "https://github.com/alexhawat/bs-score"
+Issues = "https://github.com/alexhawat/bs-score/issues"
+Changelog = "https://github.com/alexhawat/bs-score/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bs_score"]

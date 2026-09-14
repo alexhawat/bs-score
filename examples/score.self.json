@@ -6,7 +6,7 @@
   "verdict": "pass",
   "fail_over": null,
   "target_kind": "repo",
-  "target_ref": "alexhawat/bs_score@3581e0b (v1 audit, kept as a regression gate)",
+  "target_ref": "alexhawat/bs-score@3581e0b (v1 audit, kept as a regression gate)",
   "profile": "repo",
   "profile_description": "Whole-repository honesty audit: docs claims plus a deep code pass.",
   "weights": {
@@ -177,7 +177,7 @@
         "title": "Schema $id points at the old bots-agents-skills repo, not the canonical bs_score repo",
         "path": "findings.schema.json:3",
         "quote": "https://github.com/alexhawat/bots-agents-skills/skills/bs_score/findings.schema.json",
-        "claim": "Canonical publish: alexhawat/bs_score (this repo).",
+        "claim": "Canonical publish: alexhawat/bs-score (this repo).",
         "confidence": 0.9,
         "target": "code"
       }

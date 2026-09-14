@@ -21,7 +21,7 @@ LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 
 
 #: Links into this repository's own README, however they are spelled.
-OWN_README = ("https://github.com/alexhawat/bs_score#", "https://github.com/alexhawat/bs_score/#")
+OWN_README = ("https://github.com/alexhawat/bs-score#", "https://github.com/alexhawat/bs-score/#")
 
 
 def _anchors(path) -> set[str]:

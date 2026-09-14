@@ -1,6 +1,6 @@
 # Wire bs-score into pre-commit.com:
 #
-#   - repo: https://github.com/alexhawat/bs_score
+#   - repo: https://github.com/alexhawat/bs-score
 #     rev: main            # no releases are tagged yet — pin a sha or a tag once there is one
 #     hooks:
 #       - id: bs-score

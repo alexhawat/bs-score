@@ -11,7 +11,7 @@ from typing import Any
 
 from . import __version__, locators
 
-INFORMATION_URI = "https://github.com/alexhawat/bs_score"
+INFORMATION_URI = "https://github.com/alexhawat/bs-score"
 
 # SARIF level per finding type: how loudly code scanning should present it.
 _LEVELS = {

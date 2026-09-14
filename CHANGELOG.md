@@ -36,7 +36,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `baselined 6` when a baseline covered it. `deduped` entries gained
   `merged_into_bucket`, naming which list the duplicate merged into.
 - **The Action pins the scorer to its own ref.** `ref` defaulted to `main`, so
-  `uses: alexhawat/bs_score@<sha>` ran that sha's `action.yml` and installed
+  `uses: alexhawat/bs-score@<sha>` ran that sha's `action.yml` and installed
   whatever `main` happened to be. It now defaults to `github.action_ref`.
 - **`-q` keeps errors.** It removed every log sink, so an unusable payload
   exited 2 having printed nothing — and `-q` is what `action.yml` passes.
@@ -183,7 +183,7 @@ needs an LLM at all.
 - Every report now carries `band`, `baselined_count`, `baselined`, and
   `evidence.fold_case`; all receipts regenerated.
 - Docs may now print the unpinned one-line install
-  (`uvx --from git+https://github.com/alexhawat/bs_score bs-score`) — true
+  (`uvx --from git+https://github.com/alexhawat/bs-score bs-score`) — true
   since v2.0.0 put `pyproject.toml` on the default branch. The regression test
   now guards the remaining false claim: `uvx bs-score` before the PyPI
   release.
@@ -209,7 +209,7 @@ The score now measures what the model *proved*, not what it *asserted*.
   false claim, and an unsafe line in an agent config no longer cost the same.
 - **Packaging.** `pyproject.toml` (hatchling), a `bs-score` console script,
   `python -m bs_score`, and a committed `uv.lock`. `uvx --from
-  "git+https://github.com/alexhawat/bs_score@<ref>"` installs without a clone
+  "git+https://github.com/alexhawat/bs-score@<ref>"` installs without a clone
   once a ref carries the package; CI proves the commit under test is installable
   that way.
 - **Loguru diagnostics** on stderr (`-v`, `-q`, `BS_SCORE_LOG_LEVEL`), leaving

@@ -19,8 +19,8 @@ Two pieces: the skill files, and the `bs-score` command that scores them.
 `SKILL.md` and the `checklists/` it links to land together:
 
 ```bash
-git clone --depth 1 https://github.com/alexhawat/bs_score ~/.config/opencode/skills/bs-score   # personal
-git clone --depth 1 https://github.com/alexhawat/bs_score .opencode/skills/bs-score   # project
+git clone --depth 1 https://github.com/alexhawat/bs-score ~/.config/opencode/skills/bs-score   # personal
+git clone --depth 1 https://github.com/alexhawat/bs-score .opencode/skills/bs-score   # project
 ```
 
 `~/.config/opencode/skills/bs-score` applies to every project; `.opencode/skills/bs-score` is checked into one
@@ -29,12 +29,12 @@ repository. Keep the folder name `bs-score` — it is the skill's name. OpenCode
 **The command** — one line, and nothing here vendors it:
 
 ```bash
-uv tool install git+https://github.com/alexhawat/bs_score   # puts bs-score on PATH
+uv tool install git+https://github.com/alexhawat/bs-score   # puts bs-score on PATH
 ```
 
 ## Canonical pack
 
-This wrapper belongs to [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
+This wrapper belongs to [alexhawat/bs-score](https://github.com/alexhawat/bs-score).
 
 1. Read **`SKILL.md` at the repository root** — the two-pass workflow, the
    per-review-type checklists, and the hard rules live there.
@@ -47,7 +47,7 @@ uv run bs-score findings.json --repo-root .   # from a clone of the repo
 ```
 
 Every install option is in the
-[repository README](https://github.com/alexhawat/bs_score#install).
+[repository README](https://github.com/alexhawat/bs-score#install).
 
 Quotes are verified against the files they name before anything is scored, so
 `--repo-root` must point at the tree you audited. For prompts and review bodies,

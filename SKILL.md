@@ -40,7 +40,7 @@ bs-score/
 └── examples/             # worked findings + receipts + fixture artifacts
 ```
 
-Canonical publish: [alexhawat/bs_score](https://github.com/alexhawat/bs_score).
+Canonical publish: [alexhawat/bs-score](https://github.com/alexhawat/bs-score).
 Per-runtime wrappers: [`agents/`](agents/).
 
 ## Score rules (locked)

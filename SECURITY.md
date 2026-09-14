@@ -4,7 +4,7 @@
 
 Please **do not** open a public issue for security vulnerabilities.
 
-Report privately via [GitHub Security Advisories](https://github.com/alexhawat/bs_score/security/advisories/new).
+Report privately via [GitHub Security Advisories](https://github.com/alexhawat/bs-score/security/advisories/new).
 You will receive an acknowledgement as soon as possible.
 
 ## Security response
