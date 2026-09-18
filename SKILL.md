@@ -23,6 +23,7 @@ Never invent, estimate, or soft-score a number in prose. Report only what
 |------|----------|
 | `Read` / `Glob` / `Grep` | Reading the artifacts under audit and locating exact quotes |
 | `Bash` | Running `bs-score`; `git diff` for branches; `gh pr view` / `gh pr diff` / `gh api` for PR and review audits |
+| `bs-score find --jev` | Optional Jev discovery — structured TypeSafe questions instead of freeform LLM findings |
 
 Nothing here writes to the artifact under audit. If a runtime asks you to
 approve a tool, `Bash` is the only one that runs anything.
@@ -86,6 +87,22 @@ Per-runtime wrappers: [`agents/`](agents/).
 | `docs` | A single document — claims only, no deep code pass | [docs](checklists/docs.md) |
 
 ## Workflow
+
+When the user or runtime passes **`--jev`**, do **not** freeform-audit with an
+LLM. Run discovery through the CLI, then score:
+
+```bash
+bs-score find --jev --repo-root . --target-kind repo -o findings.json
+bs-score findings.json --repo-root .
+# or chain: bs-score find --jev --repo-root . --target-kind repo --score
+```
+
+Jev (TypeSafe System One) returns Choice/Score/Noul only — it cannot invent
+titles or quotes. Candidate units are collected deterministically from markdown;
+`quote` is always a verbatim span from the file and `title` comes from a fixed
+template keyed by finding type. Requires `typesafe-sdk` (`uv sync --extra jev`)
+and `TYPESAFE_API_KEY`. Implemented for `repo` and `docs` only; other review
+types still need the manual workflow below.
 
 1. **Map claims.** List the concrete assertions the artifact makes — features,
    paths, CLIs, triggers, guarantees, "always"/"never"/"automatically".

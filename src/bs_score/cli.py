@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 from loguru import logger
@@ -19,6 +20,12 @@ from . import __version__
 from .baseline import BaselineError, load_baseline, write_baseline
 from .claims import audit_document, claims_as_findings
 from .evidence import DEFAULT_LINE_WINDOW, Verifier
+from .jev_find import (
+    DEFAULT_DOC_GLOBS,
+    JevConfigError,
+    JevDependencyError,
+    discover_findings,
+)
 from .logging_setup import configure
 from .report import Options, PayloadError, build_report, render_markdown, sha256_of_document
 from .resources import (
@@ -161,6 +168,75 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_find_parser() -> argparse.ArgumentParser:
+    """Return the parser for ``bs-score find --jev``."""
+    parser = argparse.ArgumentParser(
+        prog="bs-score find",
+        description=(
+            "Discover findings with TypeSafe Jev (System One). Candidate units are "
+            "collected deterministically from markdown; Jev judges semantic "
+            "wrongness and assigns a finding type from the fixed enum. Quotes "
+            "are always verbatim spans from the artifact — Jev cannot invent prose."
+        ),
+    )
+    parser.add_argument(
+        "--jev",
+        action="store_true",
+        help="Run Jev-based discovery (requires typesafe-sdk and TYPESAFE_API_KEY)",
+    )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=Path("."),
+        help="Tree that paths resolve against (default: .)",
+    )
+    parser.add_argument(
+        "--target-kind",
+        choices=("repo", "docs", "pr", "branch", "review", "skill", "agent", "prompt"),
+        default="repo",
+        help=(
+            "Review type for the emitted payload (default: repo; "
+            "only repo and docs are implemented)"
+        ),
+    )
+    parser.add_argument(
+        "--glob",
+        action="append",
+        default=[],
+        dest="globs",
+        metavar="GLOB",
+        help=(
+            "Markdown path glob relative to --repo-root (repeatable). "
+            f"Default: {', '.join(DEFAULT_DOC_GLOBS)}"
+        ),
+    )
+    parser.add_argument(
+        "--document",
+        type=Path,
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Audit one document instead of the default glob set (repeatable)",
+    )
+    parser.add_argument(
+        "--score",
+        action="store_true",
+        help="After discovery, score the payload in-process (same flags as the scorer apply)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help=(
+            "Write findings JSON here (stdout receives the payload unless "
+            "--score is given without -o)"
+        ),
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, help="Repeat for more logs")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Silence logging")
+    return parser
+
+
 def build_claims_parser() -> argparse.ArgumentParser:
     """Return the parser for ``bs-score claims``."""
     parser = argparse.ArgumentParser(
@@ -206,6 +282,61 @@ def build_claims_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def find_main(argv: list[str]) -> int:
+    """Run ``bs-score find --jev`` and return a process exit code."""
+    args = build_find_parser().parse_args(argv)
+    configure(args.verbose, quiet=args.quiet)
+    logger.enable("bs_score")
+
+    if not args.jev:
+        logger.error("find requires --jev (Jev-based discovery)")
+        return EXIT_INVALID
+    if not args.repo_root.is_dir():
+        logger.error("--repo-root is not a directory: {}", args.repo_root)
+        return EXIT_INVALID
+
+    doc_paths = tuple(args.document)
+    for path in doc_paths:
+        if not path.is_file():
+            logger.error("--document is not a file: {}", path)
+            return EXIT_INVALID
+
+    globs = tuple(args.globs) if args.globs else DEFAULT_DOC_GLOBS
+    try:
+        payload = discover_findings(
+            args.repo_root,
+            target_kind=args.target_kind,
+            globs=globs,
+            paths=doc_paths,
+        )
+    except JevDependencyError as exc:
+        logger.error("{}", exc)
+        return EXIT_INVALID
+    except JevConfigError as exc:
+        logger.error("{}", exc)
+        return EXIT_INVALID
+
+    findings_text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(findings_text, encoding="utf-8")
+        logger.info("wrote {}", args.output)
+
+    if args.score:
+        if args.output:
+            findings_path = args.output
+        else:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False, encoding="utf-8"
+            ) as handle:
+                handle.write(findings_text)
+                findings_path = Path(handle.name)
+        return main([str(findings_path), "--repo-root", str(args.repo_root), "-q"])
+
+    sys.stdout.write(findings_text)
+    return EXIT_OK
+
+
 def claims_main(argv: list[str]) -> int:
     """Run ``bs-score claims`` and return a process exit code."""
     args = build_claims_parser().parse_args(argv)
@@ -246,6 +377,8 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:]) if argv is None else list(argv)
     if argv and argv[0] == "claims":
         return claims_main(argv[1:])
+    if argv and argv[0] == "find":
+        return find_main(argv[1:])
     args = build_parser().parse_args(argv)
     configure(args.verbose, quiet=args.quiet)
     logger.enable("bs_score")
@@ -365,8 +498,10 @@ __all__ = [
     "EXIT_OK",
     "EXIT_OVER_THRESHOLD",
     "build_claims_parser",
+    "build_find_parser",
     "build_parser",
     "claims_main",
+    "find_main",
     "main",
     "run",
 ]

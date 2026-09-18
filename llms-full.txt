@@ -36,6 +36,7 @@ Never invent, estimate, or soft-score a number in prose. Report only what
 |------|----------|
 | `Read` / `Glob` / `Grep` | Reading the artifacts under audit and locating exact quotes |
 | `Bash` | Running `bs-score`; `git diff` for branches; `gh pr view` / `gh pr diff` / `gh api` for PR and review audits |
+| `bs-score find --jev` | Optional Jev discovery — structured TypeSafe questions instead of freeform LLM findings |
 
 Nothing here writes to the artifact under audit. If a runtime asks you to
 approve a tool, `Bash` is the only one that runs anything.
@@ -99,6 +100,22 @@ Per-runtime wrappers: [`agents/`](agents/).
 | `docs` | A single document — claims only, no deep code pass | [docs](checklists/docs.md) |
 
 ## Workflow
+
+When the user or runtime passes **`--jev`**, do **not** freeform-audit with an
+LLM. Run discovery through the CLI, then score:
+
+```bash
+bs-score find --jev --repo-root . --target-kind repo -o findings.json
+bs-score findings.json --repo-root .
+# or chain: bs-score find --jev --repo-root . --target-kind repo --score
+```
+
+Jev (TypeSafe System One) returns Choice/Score/Noul only — it cannot invent
+titles or quotes. Candidate units are collected deterministically from markdown;
+`quote` is always a verbatim span from the file and `title` comes from a fixed
+template keyed by finding type. Requires `typesafe-sdk` (`uv sync --extra jev`)
+and `TYPESAFE_API_KEY`. Implemented for `repo` and `docs` only; other review
+types still need the manual workflow below.
 
 1. **Map claims.** List the concrete assertions the artifact makes — features,
    paths, CLIs, triggers, guarantees, "always"/"never"/"automatically".
@@ -275,5 +292,17 @@ CLI surface (rendered from the argparse definitions)
 - `--check-links` — Also fetch http(s) link targets (off by default; needs network)
 - `--emit-findings` — Emit a findings payload (target_kind=docs) of the failed checks, ready to score with: bs-score findings.json --repo-root .
 - `--ignore` — Path-like spans that are not claims about this tree: runtime artifacts a command writes (report.*), illustrative examples. Reported as 'skip' with the pattern named, never dropped. Repeatable.
+- `-v, --verbose` — Repeat for more logs
+- `-q, --quiet` — Silence logging
+
+`bs-score find --jev` options:
+- `-h, --help` — show this help message and exit
+- `--jev` — Run Jev-based discovery (requires typesafe-sdk and TYPESAFE_API_KEY)
+- `--repo-root` — Tree that paths resolve against (default: .)
+- `--target-kind` — Review type for the emitted payload (default: repo; only repo and docs are implemented)
+- `--glob` — Markdown path glob relative to --repo-root (repeatable). Default: README.md, docs/**/*.md, *.md
+- `--document` — Audit one document instead of the default glob set (repeatable)
+- `--score` — After discovery, score the payload in-process (same flags as the scorer apply)
+- `-o, --output` — Write findings JSON here (stdout receives the payload unless --score is given without -o)
 - `-v, --verbose` — Repeat for more logs
 - `-q, --quiet` — Silence logging

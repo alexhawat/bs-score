@@ -6,6 +6,16 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **`bs-score find --jev`** — optional Jev-based finding discovery via TypeSafe
+  System One. Collects candidate units deterministically from markdown, asks
+  structured Choice/Score/Noul questions per unit, and emits a
+  `findings.schema.json` payload with verbatim quotes and templated titles.
+  Requires the optional `jev` extra (`typesafe-sdk`) and `TYPESAFE_API_KEY`.
+  Implemented for `target_kind` `repo` and `docs`; `--score` chains the scorer
+  in one process. Without `--jev`, behaviour is unchanged.
+
 ### Changed
 
 - **The skill is named `bs-score`**, matching the CLI, the distribution and the
