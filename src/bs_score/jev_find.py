@@ -1,29 +1,34 @@
 """Jev-based finding discovery via TypeSafe System One.
 
 ``bs-score find --jev`` collects deterministic candidate units from markdown
-artifacts, asks TypeSafe (Jev) structured questions about each one, and emits a
-``findings.schema.json`` payload. Quotes are always verbatim spans from the
-file; titles come from fixed templates keyed by finding type.
+artifacts, asks TypeSafe (Jev) structured questions in one batched call per
+file, and emits a ``findings.schema.json`` payload. Quotes are always verbatim
+spans from the file; titles come from fixed templates keyed by finding type.
 """
 
 from __future__ import annotations
 
 import os
 import re
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 from .claims import FENCED_BLOCK, _line_of, load_project_facts
-
-FINDING_TYPES = (
-    "breaking_bug",
-    "security_issue",
-    "missing_feature",
-    "bug",
-    "wrong_claim",
+from .jev_questions import (
+    FINDING_TYPES,
+    JEV_MODEL,
+    JEV_QUESTIONS_VERSION,
+    UNTRUSTED_NOTICE,
+    RoutingThresholds,
+    UnitJudgment,
+    build_questions_for_units,
+    parse_unit_judgment,
+    route_unit_judgment,
 )
+from .logging_setup import logger
 
 DEFAULT_DOC_GLOBS = ("README.md", "docs/**/*.md", "*.md")
 
@@ -86,6 +91,8 @@ class JevClient(Protocol):
         self,
         state: Any,
         questions: dict[str, Any],
+        *,
+        model: str | None = None,
     ) -> Any: ...
 
 
@@ -251,41 +258,103 @@ def _finding_target(path: str) -> str:
     return TARGET_FOR_PATH.get(suffix, "other")
 
 
-def _build_questions(Choice: Any, Noul: Any, Score: Any) -> dict[str, Any]:
+def build_jev_state(
+    *,
+    target_kind: str,
+    file_path: str,
+    units: list[CandidateUnit],
+    repo_root: Path,
+) -> dict[str, Any]:
+    """Build filtered state for one shared file window."""
+    facts = load_project_facts(repo_root)
     return {
-        "keep": Noul(
-            instructions=(
-                "The quoted span states a concrete, checkable claim about this "
-                "project (a path, command, flag, version, guarantee, or capability) "
-                "that is false or contradicted by the repository context provided."
-            ),
-        ),
-        "finding_type": Choice(
-            instructions="When the claim is a real defect, which finding type fits best?",
-            criteria={
-                "wrong_claim": "A stated fact in the text is contradicted by the artifact",
-                "missing_feature": "The text asserts a capability with nothing behind it",
-                "bug": "Incorrect behaviour that is not catastrophic",
-                "breaking_bug": "Crash, wrong result, data loss, or workflow that cannot run",
-                "security_issue": "Auth, injection, secrets, privilege, or unsafe instruction",
-            },
-        ),
-        "confidence": Score(
-            instructions="How confident are you that this is a real defect?",
-            criteria=[
-                "Low — plausible but uncertain",
-                "Medium — likely a real issue",
-                "High — clearly contradicted or broken",
-            ],
-        ),
+        "notice": UNTRUSTED_NOTICE,
+        "questions_version": JEV_QUESTIONS_VERSION,
+        "target_kind": target_kind,
+        "file": file_path,
+        "project": {
+            "scripts": sorted(facts.scripts),
+            "version": facts.version,
+            "python_floor": facts.python_floor,
+        },
+        "units": [
+            {
+                "index": index,
+                "line": unit.line,
+                "quote": unit.quote,
+                "context": unit.context,
+            }
+            for index, unit in enumerate(units)
+        ],
     }
 
 
-def _confidence_value(score_answer: Any) -> float:
-    if getattr(score_answer, "confidence", None) is not None:
-        return float(max(0.0, min(1.0, score_answer.confidence)))
-    index = int(getattr(score_answer, "score", 1))
-    return {0: 0.33, 1: 0.66, 2: 0.9}.get(index, 0.66)
+def _log_jev_response(*, file_path: str, unit_count: int, response: Any) -> None:
+    usage = getattr(response, "usage", None)
+    input_tokens = getattr(usage, "input_tokens", None) if usage else None
+    output_tokens = getattr(usage, "output_tokens", None) if usage else None
+    logger.info(
+        "jev system_one file={} units={} model={} input_tokens={} output_tokens={}",
+        file_path,
+        unit_count,
+        getattr(response, "model", JEV_MODEL),
+        input_tokens,
+        output_tokens,
+    )
+
+
+def _judgment_to_finding(unit: CandidateUnit, judgment: UnitJudgment) -> dict[str, Any]:
+    finding_type = judgment.finding_type
+    return {
+        "type": finding_type,
+        "title": TITLE_TEMPLATES[finding_type],
+        "path": f"{unit.path}:{unit.line}",
+        "quote": unit.quote,
+        "target": _finding_target(unit.path),
+        "confidence": judgment.score_confidence,
+    }
+
+
+def judge_file_units(
+    client: JevClient,
+    *,
+    target_kind: str,
+    file_path: str,
+    units: list[CandidateUnit],
+    repo_root: Path,
+    questions: dict[str, Any] | None = None,
+    thresholds: RoutingThresholds | None = None,
+    sdk_types: tuple[Any, Any, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Ask Jev about every unit in one file with a single batched call."""
+    if not units:
+        return []
+
+    if questions is None:
+        if sdk_types is None:
+            _, Choice, Noul, Score = require_jev_dependencies()
+        else:
+            Choice, Noul, Score = sdk_types
+        questions = build_questions_for_units(len(units), Choice=Choice, Noul=Noul, Score=Score)
+
+    state = build_jev_state(
+        target_kind=target_kind,
+        file_path=file_path,
+        units=units,
+        repo_root=repo_root,
+    )
+    response = client.system_one(state=state, questions=questions, model=JEV_MODEL)
+    _log_jev_response(file_path=file_path, unit_count=len(units), response=response)
+
+    findings: list[dict[str, Any]] = []
+    for index, unit in enumerate(units):
+        judgment = parse_unit_judgment(response, index)
+        if judgment is None:
+            continue
+        if not route_unit_judgment(judgment, thresholds=thresholds):
+            continue
+        findings.append(_judgment_to_finding(unit, judgment))
+    return findings
 
 
 def judge_unit(
@@ -294,42 +363,23 @@ def judge_unit(
     *,
     repo_root: Path,
     target_kind: str,
-    questions: dict[str, Any],
-    keep_threshold: float = 0.5,
+    questions: dict[str, Any] | None = None,
+    thresholds: RoutingThresholds | None = None,
+    keep_threshold: float | None = None,
 ) -> dict[str, Any] | None:
-    """Ask Jev about one unit; return a finding dict or None if rejected."""
-    facts = load_project_facts(repo_root)
-    state = {
-        "target_kind": target_kind,
-        "file": unit.path,
-        "line": unit.line,
-        "quote": unit.quote,
-        "context": unit.context,
-        "project": {
-            "scripts": sorted(facts.scripts),
-            "version": facts.version,
-            "python_floor": facts.python_floor,
-        },
-    }
-    response = client.system_one(state=state, questions=questions)
-    keep_answer = response.answers["keep"]
-    if float(keep_answer.noul) < keep_threshold:
-        return None
-
-    type_answer = response.answers["finding_type"]
-    finding_type = type_answer.choice
-    if finding_type not in FINDING_TYPES:
-        finding_type = "wrong_claim"
-
-    confidence_answer = response.answers["confidence"]
-    return {
-        "type": finding_type,
-        "title": TITLE_TEMPLATES[finding_type],
-        "path": f"{unit.path}:{unit.line}",
-        "quote": unit.quote,
-        "target": _finding_target(unit.path),
-        "confidence": _confidence_value(confidence_answer),
-    }
+    """Ask Jev about one unit via a single-unit batch (tests and legacy callers)."""
+    if keep_threshold is not None:
+        thresholds = RoutingThresholds(keep_noul_min=keep_threshold)
+    findings = judge_file_units(
+        client,
+        target_kind=target_kind,
+        file_path=unit.path,
+        units=[unit],
+        repo_root=repo_root,
+        questions=questions,
+        thresholds=thresholds,
+    )
+    return findings[0] if findings else None
 
 
 def discover_findings(
@@ -339,12 +389,14 @@ def discover_findings(
     globs: tuple[str, ...] = DEFAULT_DOC_GLOBS,
     paths: tuple[Path, ...] = (),
     client_factory: Callable[[], JevClient] | None = None,
-    keep_threshold: float = 0.5,
+    keep_threshold: float | None = None,
+    thresholds: RoutingThresholds | None = None,
 ) -> dict[str, Any]:
     """Run Jev discovery and return a findings payload."""
     TypeSafeClient, Choice, Noul, Score = require_jev_dependencies()
     require_api_key()
-    questions = _build_questions(Choice, Noul, Score)
+    if keep_threshold is not None:
+        thresholds = RoutingThresholds(keep_noul_min=keep_threshold)
 
     units = collect_units(
         repo_root,
@@ -354,27 +406,33 @@ def discover_findings(
     )
     files_read = sorted({unit.path for unit in units})
 
-    factory = client_factory or (lambda: TypeSafeClient())
+    by_file: dict[str, list[CandidateUnit]] = defaultdict(list)
+    for unit in units:
+        by_file[unit.path].append(unit)
+
+    factory = client_factory or (lambda: TypeSafeClient(model=JEV_MODEL))
     client = factory()
     findings: list[dict[str, Any]] = []
     try:
-        for index, unit in enumerate(units, start=1):
-            judged = judge_unit(
+        for file_path in sorted(by_file):
+            file_units = by_file[file_path]
+            batch = judge_file_units(
                 client,
-                unit,
-                repo_root=repo_root,
                 target_kind=target_kind,
-                questions=questions,
-                keep_threshold=keep_threshold,
+                file_path=file_path,
+                units=file_units,
+                repo_root=repo_root,
+                thresholds=thresholds,
+                sdk_types=(Choice, Noul, Score),
             )
-            if judged is None:
-                continue
-            judged["id"] = f"jev-{index}"
-            findings.append(judged)
+            findings.extend(batch)
     finally:
         close = getattr(client, "close", None)
         if callable(close):
             close()
+
+    for index, finding in enumerate(findings, start=1):
+        finding["id"] = f"jev-{index}"
 
     payload: dict[str, Any] = {
         "version": 2,
@@ -394,11 +452,13 @@ __all__ = [
     "JevDependencyError",
     "JevError",
     "SUPPORTED_TARGET_KINDS",
+    "build_jev_state",
     "collect_paths",
     "collect_units",
     "default_doc_paths",
     "discover_findings",
     "extract_units_from_markdown",
+    "judge_file_units",
     "judge_unit",
     "require_api_key",
     "require_jev_dependencies",

@@ -123,7 +123,13 @@ Markdown links, and fenced code blocks are checked deterministically, and
 **`bs-score find --jev`** is an optional middle path: TypeSafe Jev (System One)
 judges semantic wrongness on deterministically collected markdown units and
 emits a scorable findings payload. Jev cannot invent prose — quotes are verbatim
-spans from the artifact and titles come from fixed templates. Requires
+spans from the artifact and titles come from fixed templates. Claim-like
+sentences are filtered in code before any Jev call; each file gets one batched
+`system_one` request with keep/type/confidence questions for every unit in that
+file. The model is pinned to jev-1.13.0; routing applies both answer
+probabilities and confidence floors from `src/bs_score/jev_questions.py`.
+Discovery logs model id and token usage per call. Keep state lean — Jev accuracy
+drops as irrelevant context grows (see TypeSafe jaggedness guidance). Requires
 `typesafe-sdk` (`uv sync --extra jev` or `pip install 'bs-score[jev]'`) and
 `TYPESAFE_API_KEY`.
 

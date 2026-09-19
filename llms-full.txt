@@ -111,10 +111,15 @@ bs-score findings.json --repo-root .
 ```
 
 Jev (TypeSafe System One) returns Choice/Score/Noul only — it cannot invent
-titles or quotes. Candidate units are collected deterministically from markdown;
-`quote` is always a verbatim span from the file and `title` comes from a fixed
-template keyed by finding type. Requires `typesafe-sdk` (`uv sync --extra jev`)
-and `TYPESAFE_API_KEY`. Implemented for `repo` and `docs` only; other review
+titles or quotes. Claim-like sentences are filtered in code before any Jev
+call; each file gets one batched `system_one` request with keep/type/confidence
+questions for every unit in that file. The model is pinned to jev-1.13.0;
+routing applies both answer probabilities and confidence floors from
+`src/bs_score/jev_questions.py`. `quote` is always a verbatim span from the
+file and `title` comes from a fixed template keyed by finding type. Keep state
+lean — Jev accuracy drops as irrelevant context grows (TypeSafe jaggedness
+guidance). Requires `typesafe-sdk` (`uv sync --extra jev`) and
+`TYPESAFE_API_KEY`. Implemented for `repo` and `docs` only; other review
 types still need the manual workflow below.
 
 1. **Map claims.** List the concrete assertions the artifact makes — features,
