@@ -55,6 +55,19 @@ def test_all_unverified_is_not_valid(capsys):
     assert report["verdict"] == "not_valid"
 
 
+def test_all_unverified_stays_not_valid_with_depth_gate(capsys):
+    from bs_score.cli import EXIT_NOT_VALID
+
+    code = main(
+        [str(EXAMPLES / "findings.hallucinated.json"), *ROOT, "--require-depth", "-q"]
+    )
+    assert code == EXIT_NOT_VALID
+    report = json.loads(capsys.readouterr().out)
+    assert report["score"] is None
+    assert report["band"] == "NOT_VALID"
+    assert report["verdict"] == "not_valid"
+
+
 def test_empty_findings_still_score_zero(capsys, tmp_path):
     """Empty findings [] is a real clean 0 — distinct from all-unverified."""
     findings = tmp_path / "empty.json"
