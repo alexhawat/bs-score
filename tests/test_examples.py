@@ -17,8 +17,12 @@ def test_example_matches_its_receipt(name, capsys, tmp_path):
         [str(EXAMPLES / f"findings.{name}.json"), *EXAMPLE_INVOCATIONS[name], "-o", str(out), "-q"]
     )
     capsys.readouterr()
-    assert code == 0
-    assert json.loads(out.read_text(encoding="utf-8")) == load_receipt(name)
+    expected = load_receipt(name)
+    if expected.get("verdict") == "not_valid":
+        assert code == 3
+    else:
+        assert code == 0
+    assert json.loads(out.read_text(encoding="utf-8")) == expected
 
 
 def test_documented_scores():
@@ -33,17 +37,19 @@ def test_documented_scores():
         "i18n": 10,
         "wild-tinycache": 8,
         "wild-greetcli": 10,
-        "hallucinated": 0,
+        "hallucinated": None,
         "blast": 5,
         "shallow": 2,
-        "self": 0,
+        "self": None,
     }
 
 
-def test_a_fabricated_audit_scores_zero():
-    """The whole point: unverifiable findings earn no points."""
+def test_a_fabricated_audit_is_not_valid():
+    """Unverified fabrications are NOT_VALID — not a clean score of 0."""
     receipt = load_receipt("hallucinated")
-    assert receipt["score"] == 0
+    assert receipt["score"] is None
+    assert receipt["band"] == "NOT_VALID"
+    assert receipt["verdict"] == "not_valid"
     assert receipt["kept_count"] == 0
     assert {entry["reason"] for entry in receipt["rejected"]} == {"unverified_evidence"}
 
@@ -65,11 +71,14 @@ def test_receipts_record_what_produced_them():
 def test_the_v1_audit_no_longer_verifies_against_this_tree():
     """`examples/findings.self.json` is the v1 audit of this repo, kept as a gate.
 
-    All eight defects were fixed, so all eight quotes are gone. If one comes
-    back, its quote verifies again, the score rises above zero, and CI fails.
+    All eight defects were fixed, so all eight quotes are gone → NOT_VALID (nothing
+    verified). If one comes back, its quote verifies again, a numeric score appears,
+    and CI fails.
     """
     receipt = load_receipt("self")
-    assert receipt["score"] == 0
+    assert receipt["score"] is None
+    assert receipt["band"] == "NOT_VALID"
+    assert receipt["verdict"] == "not_valid"
     assert receipt["rejected_count"] == 8
     assert receipt["evidence"]["by_status"] == {"quote_not_found": 8}
 

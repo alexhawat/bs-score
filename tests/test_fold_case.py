@@ -33,8 +33,10 @@ def _run(tmp_path, capsys, *extra):
 
 def test_exact_matching_is_the_default(tmp_path, capsys):
     """A quote that changes case is a changed quote: rejected without the flag."""
-    _, report = _run(tmp_path, capsys)
-    assert report["score"] == 0
+    code, report = _run(tmp_path, capsys)
+    assert code == 3
+    assert report["score"] is None
+    assert report["verdict"] == "not_valid"
     assert report["rejected"][0]["reason"] == "unverified_evidence"
     assert report["evidence"]["fold_case"] is False
 
@@ -94,6 +96,8 @@ def test_fold_case_reaches_the_blast_radius_sweep(tmp_path, capsys):
     assert folded["kept"][0]["evidence"]["status"] == "verified"
     assert folded["kept"][0]["files_affected"] == 1, "verified but counted nowhere"
 
-    assert main(args) == 0
+    assert main(args) == 3
     exact = json.loads(capsys.readouterr().out)
     assert exact["kept_count"] == 0, "exact matching is still the default"
+    assert exact["verdict"] == "not_valid"
+    assert exact["score"] is None

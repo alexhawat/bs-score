@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+- All-unverified runs (findings present, nothing verified) are **NOT_VALID**
+  (`score: null`, exit 3), not a clean score of 0. Empty `findings: []` stays 0.
+
 ## [Unreleased]
 
 ### Changed
