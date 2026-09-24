@@ -28,6 +28,8 @@ dependencies = ["loguru>=0.7.2"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "jsonschema>=4.21", "ruff>=0.6", "pyyaml>=6.0"]
+# Jev-based finding discovery (`bs-score find --jev`).
+jev = ["typesafe-sdk>=0.7.0"]
 # Experimental: MCP server (stdio) exposing audit/score tools.
 mcp = ["mcp>=1.2"]
 

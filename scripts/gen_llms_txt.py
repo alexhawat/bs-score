@@ -25,7 +25,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-from bs_score.cli import build_claims_parser, build_parser  # noqa: E402
+from bs_score.cli import build_claims_parser, build_find_parser, build_parser  # noqa: E402
 
 RAW = "https://raw.githubusercontent.com/alexhawat/bs-score/main"
 
@@ -78,8 +78,11 @@ def schema_summary(schema: dict) -> str:
 def cli_flags() -> str:
     """Render both parsers' options so the documented CLI cannot drift."""
     sections = []
-    for prog, parser in (("bs-score FINDINGS", build_parser()),
-                         ("bs-score claims DOC", build_claims_parser())):
+    for prog, parser in (
+        ("bs-score FINDINGS", build_parser()),
+        ("bs-score claims DOC", build_claims_parser()),
+        ("bs-score find --jev", build_find_parser()),
+    ):
         lines = [f"`{prog}` options:"]
         for action in parser._actions:
             if not action.option_strings:
