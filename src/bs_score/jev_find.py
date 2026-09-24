@@ -143,8 +143,10 @@ def collect_paths(repo_root: Path, globs: tuple[str, ...]) -> list[Path]:
 
 
 def _strip_fences(text: str) -> str:
-    """Remove fenced code blocks so prose sentences are not parsed from them."""
-    return FENCED_BLOCK.sub("", text)
+    """Mask fenced blocks while preserving offsets into the original text."""
+    return FENCED_BLOCK.sub(
+        lambda match: re.sub(r"[^\n]", " ", match.group(0)), text
+    )
 
 
 def _sentences_from_paragraph(paragraph: str) -> list[str]:
@@ -393,8 +395,8 @@ def discover_findings(
     thresholds: RoutingThresholds | None = None,
 ) -> dict[str, Any]:
     """Run Jev discovery and return a findings payload."""
-    TypeSafeClient, Choice, Noul, Score = require_jev_dependencies()
     require_api_key()
+    TypeSafeClient, Choice, Noul, Score = require_jev_dependencies()
     if keep_threshold is not None:
         thresholds = RoutingThresholds(keep_noul_min=keep_threshold)
 

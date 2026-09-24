@@ -172,6 +172,7 @@ def build_find_parser() -> argparse.ArgumentParser:
     """Return the parser for ``bs-score find --jev``."""
     parser = argparse.ArgumentParser(
         prog="bs-score find",
+        allow_abbrev=False,
         description=(
             "Discover findings with TypeSafe Jev (System One). Candidate units are "
             "collected deterministically from markdown; Jev judges semantic "
@@ -284,7 +285,8 @@ def build_claims_parser() -> argparse.ArgumentParser:
 
 def find_main(argv: list[str]) -> int:
     """Run ``bs-score find --jev`` and return a process exit code."""
-    args = build_find_parser().parse_args(argv)
+    parser = build_find_parser()
+    args, score_argv = parser.parse_known_args(argv)
     configure(args.verbose, quiet=args.quiet)
     logger.enable("bs_score")
 
@@ -294,11 +296,23 @@ def find_main(argv: list[str]) -> int:
     if not args.repo_root.is_dir():
         logger.error("--repo-root is not a directory: {}", args.repo_root)
         return EXIT_INVALID
+    if score_argv:
+        if not args.score:
+            parser.error(f"unrecognized arguments: {' '.join(score_argv)}")
+        build_parser().parse_args(
+            ["findings.json", "--repo-root", str(args.repo_root), *score_argv]
+        )
 
-    doc_paths = tuple(args.document)
+    doc_paths = tuple(
+        path if path.is_absolute() else args.repo_root / path
+        for path in args.document
+    )
     for path in doc_paths:
         if not path.is_file():
             logger.error("--document is not a file: {}", path)
+            return EXIT_INVALID
+        if not path.resolve().is_relative_to(args.repo_root.resolve()):
+            logger.error("--document is outside --repo-root: {}", path)
             return EXIT_INVALID
 
     globs = tuple(args.globs) if args.globs else DEFAULT_DOC_GLOBS
@@ -323,15 +337,13 @@ def find_main(argv: list[str]) -> int:
         logger.info("wrote {}", args.output)
 
     if args.score:
+        score_args = ["--repo-root", str(args.repo_root), "-q", *score_argv]
         if args.output:
-            findings_path = args.output
-        else:
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False, encoding="utf-8"
-            ) as handle:
-                handle.write(findings_text)
-                findings_path = Path(handle.name)
-        return main([str(findings_path), "--repo-root", str(args.repo_root), "-q"])
+            return main([str(args.output), *score_args])
+        with tempfile.TemporaryDirectory() as directory:
+            findings_path = Path(directory) / "findings.json"
+            findings_path.write_text(findings_text, encoding="utf-8")
+            return main([str(findings_path), *score_args])
 
     sys.stdout.write(findings_text)
     return EXIT_OK

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from dataclasses import dataclass
 from types import SimpleNamespace
 
@@ -53,6 +54,11 @@ class FakeScoreAnswer:
     confidence: float = 0.85
 
 
+class FakeQuestion:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+
 class FakeJevClient:
     """Minimal stand-in for TypeSafeClient.system_one."""
 
@@ -90,11 +96,33 @@ class FakeJevClient:
         return None
 
 
+@pytest.fixture(autouse=True)
+def mock_optional_sdk(monkeypatch):
+    """The standard test suite must not need the optional Jev extra."""
+    monkeypatch.setattr(
+        "bs_score.jev_find.require_jev_dependencies",
+        lambda: (FakeJevClient, FakeQuestion, FakeQuestion, FakeQuestion),
+    )
+
+
 def test_extract_units_from_fixture_guide():
     units = extract_units_from_markdown(GUIDE, FIXTURE_DOCS)
     quotes = {unit.quote for unit in units}
     assert "Requires Python 3.9 or newer." in quotes
     assert any("config/poller.yaml" in quote for quote in quotes)
+
+
+def test_extract_units_keeps_line_numbers_after_fenced_block(tmp_path):
+    document = tmp_path / "guide.md"
+    document.write_text(
+        "```python\n" + "print('example')\n" * 12 + "```\n\n"
+        "Requires Python 3.9 or newer.\n",
+        encoding="utf-8",
+    )
+    units = extract_units_from_markdown(document, tmp_path)
+    assert len(units) == 1
+    assert units[0].line == 16
+    assert units[0].quote == "Requires Python 3.9 or newer."
 
 
 def test_collect_units_docs_target():
@@ -281,7 +309,6 @@ def test_cli_missing_api_key(monkeypatch, capsys):
 
 def test_cli_missing_sdk(monkeypatch, capsys):
     monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
-    monkeypatch.setitem(__import__("sys").modules, "typesafe_sdk", None)
 
     def _boom():
         raise JevDependencyError("install me")
@@ -331,6 +358,45 @@ def test_cli_emits_findings_json(monkeypatch, capsys):
     assert code == EXIT_OK
     payload = json.loads(capsys.readouterr().out)
     assert payload["target_kind"] == "docs"
+
+
+def test_cli_resolves_document_from_repo_root(monkeypatch, tmp_path, capsys):
+    paths_seen = []
+
+    def fake_discover(*args, **kwargs):
+        paths_seen.extend(kwargs["paths"])
+        return {"version": 2, "target_kind": "docs", "findings": []}
+
+    monkeypatch.setattr("bs_score.cli.discover_findings", fake_discover)
+    monkeypatch.chdir(tmp_path)
+    code = main(
+        ["find", "--jev", "--repo-root", str(FIXTURE_DOCS), "--document", "guide.md", "-q"]
+    )
+    assert code == EXIT_OK
+    assert paths_seen == [GUIDE]
+    capsys.readouterr()
+
+
+def test_cli_score_forwards_flags_and_cleans_up(monkeypatch, tmp_path, capsys):
+    payload = json.loads((EXAMPLES / "findings.valid.json").read_text(encoding="utf-8"))
+    monkeypatch.setattr("bs_score.cli.discover_findings", lambda *args, **kwargs: payload)
+    temporary_directory = tempfile.TemporaryDirectory
+    monkeypatch.setattr(
+        "bs_score.cli.tempfile.TemporaryDirectory",
+        lambda: temporary_directory(dir=tmp_path),
+    )
+
+    code = main(
+        [
+            "find", "--jev", "--repo-root", str(EXAMPLES / "fixture-repo"),
+            "--score", "--fail-over", "0", "--no-scan", "-q",
+        ]
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert code == 1
+    assert report["score"] == 17
+    assert report["blast_radius"]["mode"] == "not_scanned"
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_require_api_key_missing(monkeypatch):
