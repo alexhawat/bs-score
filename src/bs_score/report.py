@@ -303,7 +303,7 @@ def build_report(
         verdict_label = NOT_VALID_VERDICT
     elif options.fail_over is not None and total > options.fail_over:
         verdict_label = "fail"
-    if options.require_depth and not depth_report.sufficient:
+    if not not_valid and options.require_depth and not depth_report.sufficient:
         verdict_label = "fail"
 
     report: dict[str, Any] = {
