@@ -48,3 +48,39 @@ def test_score_tool_returns_the_same_sections_as_the_cli():
     assert report["blast_radius"]["mode"] == "scanned"
     assert report["kept"][0]["files_affected"] == 3
     assert report["depth"]["status"] == "deep"
+
+
+def test_audit_tool_rejects_a_missing_document():
+    with pytest.raises(ValueError, match=r"document is not a file: does-not-exist\.md"):
+        mcp_server.audit_tool("does-not-exist.md", str(FIXTURE_DOCS))
+
+
+def test_audit_tool_rejects_a_missing_repo_root():
+    with pytest.raises(ValueError, match="repo_root is not a directory"):
+        mcp_server.audit_tool(str(FIXTURE_DOCS / "guide.md"), "does/not/exist")
+
+
+def test_score_tool_rejects_a_missing_repo_root():
+    with pytest.raises(ValueError, match="repo_root is not a directory"):
+        mcp_server.score_tool(str(EXAMPLES / "findings.valid.json"), "does/not/exist")
+
+
+def test_score_tool_rejects_a_missing_findings_file():
+    with pytest.raises(ValueError, match="findings is not a file"):
+        mcp_server.score_tool("does/not/exist.json", str(EXAMPLES / "fixture-repo"))
+
+
+def test_score_tool_wraps_a_malformed_envelope_as_value_error(tmp_path):
+    """PayloadError used to escape raw; MCP surfaces ValueError cleanly."""
+    bad = tmp_path / "bad.json"
+    bad.write_text('{"hello": "world"}')
+    with pytest.raises(ValueError, match="findings"):
+        mcp_server.score_tool(str(bad), str(EXAMPLES / "fixture-repo"))
+
+
+def test_score_tool_wraps_unparseable_json_as_value_error(tmp_path):
+    """DataFileError is a RuntimeError; the tool converts it too."""
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not json")
+    with pytest.raises(ValueError, match="bad.json"):
+        mcp_server.score_tool(str(bad), str(EXAMPLES / "fixture-repo"))

@@ -7,7 +7,7 @@ import json
 import pytest
 from conftest import EXAMPLES, FIXTURE_REPO
 
-from bs_score.baseline import BaselineError, load_baseline, render_baseline
+from bs_score.baseline import BaselineError, load_baseline, render_baseline, write_baseline
 from bs_score.cli import EXIT_INVALID, EXIT_OK, main
 
 VALID = str(EXAMPLES / "findings.valid.json")
@@ -120,3 +120,22 @@ def test_render_baseline_dedupes_repeated_entries():
         "title": "t",
     }
     assert len(render_baseline([entry, dict(entry), entry])["findings"]) == 1
+
+
+def test_write_baseline_raises_baseline_error_on_unwritable_target(tmp_path):
+    """Callers get one exception type, not a raw OSError."""
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory")  # a child path under it cannot be created
+    report = {"kept": [], "baselined": []}
+    with pytest.raises(BaselineError, match="cannot write baseline"):
+        write_baseline(blocked / "b.json", report)
+
+
+def test_unwritable_write_baseline_is_a_usage_error(tmp_path, capsys):
+    """A failed --write-baseline exits 2 with an error, not a traceback exit 1."""
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory")
+    code = main([VALID, *ROOT, "-q", "--write-baseline", str(blocked / "b.json")])
+    captured = capsys.readouterr()
+    assert code == EXIT_INVALID
+    assert "cannot write baseline" in captured.err

@@ -10,6 +10,32 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - All-unverified runs (findings present, nothing verified) are **NOT_VALID**
   (`score: null`, exit 3), not a clean score of 0. Empty `findings: []` stays 0.
 
+### Fixed
+- **Unwritable `-o` / `--write-baseline` targets exit 2 with an error message**,
+  not a traceback and exit 1 — which a CI gate read as "over `--fail-over`".
+- **`claims` checks flags against the parser that owns them.** A
+  subcommand-only flag (the claims subcommand's `--check-links`) falsely
+  passed against the base `bs-score` parser, because every `add_argument` in
+  the entry module was unioned; used with the base command it now fails, as
+  it should.
+- **A backticked version number is not a path claim.** `` `9.9.9` `` in prose
+  failed as "path 9.9.9 does not exist"; bare versions are now left to the
+  version checker.
+- **The Action installs the scorer from the repository it was resolved from**
+  (`github.action_repository`), so a fork runs its own ref — not a hardcoded
+  upstream slug. And the non-`json` report run's exit code is checked: the
+  step now fails when that run fails or `report.$FORMAT` was not created.
+- **Markdown reports escape `|` and fold newlines** in finding titles, paths,
+  and the rejected/baselined lists, so a title like `a | b` no longer breaks
+  the table it renders in.
+- **`claims` resolves bare-name paths through one pruned index** per document
+  instead of re-walking the whole tree per token, pruning `.git`, `.venv`,
+  `node_modules`, `__pycache__`, `.pytest_cache`, `.ruff_cache`, `dist`, and
+  `build` during the walk rather than filtering afterwards.
+- **The MCP tools validate their inputs** (`document`, `findings`,
+  `repo_root`) and raise `ValueError` for payload, scoring, and data-file
+  failures, so MCP surfaces clean tool errors instead of raw tracebacks.
+
 ## [Unreleased]
 
 ### Changed
