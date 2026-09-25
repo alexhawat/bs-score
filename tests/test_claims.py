@@ -265,3 +265,75 @@ def test_a_url_without_its_scheme_is_not_a_path(tmp_path):
     assert sorted((c.verdict, c.span) for c in paths if c.kind == "path") == [
         ("fail", "`.github/nope.yml`"), ("pass", "`.github/ci.yml`"),
     ]
+
+
+def _two_command_repo(root):
+    """A script whose entry point dispatches to a subcommand parser."""
+    (root / "pyproject.toml").write_text(
+        '[project]\nname = "demo"\nversion = "1.0.0"\n\n'
+        '[project.scripts]\ndemo = "demo.cli:run"\n'
+    )
+    pkg = root / "demo"
+    pkg.mkdir()
+    (pkg / "cli.py").write_text(
+        "import argparse\n"
+        "import sys\n\n"
+        "def build_parser():\n"
+        "    parser = argparse.ArgumentParser(prog='demo')\n"
+        "    parser.add_argument('--speed')\n"
+        "    return parser\n\n"
+        "def build_extra_parser():\n"
+        "    parser = argparse.ArgumentParser(prog='demo extra')\n"
+        "    parser.add_argument('--deep', action='store_true')\n"
+        "    return parser\n\n"
+        "def run():\n"
+        "    argv = sys.argv[1:]\n"
+        "    if argv and argv[0] == 'extra':\n"
+        "        build_extra_parser().parse_args(argv[1:])\n"
+        "    else:\n"
+        "        build_parser().parse_args(argv)\n"
+    )
+    return root
+
+
+def test_a_subcommand_flag_is_not_the_base_commands_flag(tmp_path):
+    """Flags were unioned across every parser in the entry module, so a
+    subcommand-only flag falsely passed against the base command."""
+    root = _two_command_repo(tmp_path)
+    facts = claims.load_project_facts(root)
+
+    failed = [c for c in claims.check_flags("demo --deep", facts) if c.verdict == "fail"]
+    assert [c.claim for c in failed] == ["`demo` accepts --deep"]
+
+    passed = claims.check_flags("demo extra --deep", facts)
+    assert [(c.claim, c.verdict) for c in passed] == [("`demo extra` accepts --deep", "pass")]
+
+    # The base command's own flags are still checked, and still pass.
+    assert [c.verdict for c in claims.check_flags("demo --speed fast", facts)] == ["pass"]
+
+
+def test_flags_fall_back_to_the_module_union_without_named_builders(tmp_path):
+    """A module whose parser is built inline (no build_*_parser functions)
+    keeps the old whole-module behaviour."""
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "demo"\nversion = "1.0.0"\n\n'
+        '[project.scripts]\ndemo = "demo.cli:main"\n'
+    )
+    pkg = tmp_path / "demo"
+    pkg.mkdir()
+    (pkg / "cli.py").write_text(
+        "import argparse\n\n"
+        "def main():\n"
+        "    parser = argparse.ArgumentParser(prog='demo')\n"
+        "    parser.add_argument('--speed')\n"
+        "    parser.parse_args()\n"
+    )
+    facts = claims.load_project_facts(tmp_path)
+    assert "--speed" in facts.flags["demo"]
+
+
+def test_this_repo_attributes_claims_flags_to_the_claims_parser():
+    facts = claims.load_project_facts(REPO)
+    assert "--check-links" in facts.flags["bs-score claims"]
+    assert "--check-links" not in facts.flags["bs-score"]
+    assert "--fail-over" in facts.flags["bs-score"]

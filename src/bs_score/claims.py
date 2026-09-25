@@ -84,7 +84,8 @@ class ProjectFacts:
     """What the packaging metadata and CLI definitions assert."""
 
     scripts: dict[str, str] = field(default_factory=dict)  # name -> module:func
-    flags: dict[str, set[str]] = field(default_factory=dict)  # script -> --flags
+    #: Invocation (script, or ``script subcommand``) -> the --flags it accepts.
+    flags: dict[str, set[str]] = field(default_factory=dict)
     version: str | None = None
     python_floor: str | None = None  # e.g. "3.11" from requires-python
 
@@ -127,25 +128,63 @@ def _module_candidates(repo_root: Path, module: str) -> list[Path]:
     return [repo_root / relative, repo_root / "src" / relative]
 
 
-def _argparse_flags(path: Path) -> set[str]:
-    """Collect the option strings a module registers with argparse."""
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-    except (OSError, SyntaxError):
-        return set()
-    flags: set[str] = {"--help"}  # argparse always adds -h/--help
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+def _add_argument_flags(node: ast.AST) -> set[str]:
+    """Every ``--flag`` registered by ``add_argument`` calls under ``node``."""
+    flags: set[str] = set()
+    for sub in ast.walk(node):
+        if not (isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute)):
             continue
-        if node.func.attr != "add_argument":
+        if sub.func.attr != "add_argument":
             continue
-        for arg in node.args:
+        for arg in sub.args:
             if (
                 isinstance(arg, ast.Constant)
                 and isinstance(arg.value, str)
                 and arg.value.startswith("--")
             ):
                 flags.add(arg.value)
+    return flags
+
+
+def _argparse_flags(path: Path) -> tuple[dict[str, set[str]], set[str]]:
+    """Option strings a module registers with argparse, grouped per function.
+
+    Returns ``(by_function, everywhere)``. A module that builds more than one
+    parser — a base command and its subcommands, as ``bs_score.cli`` does —
+    must not have their flags unioned: a subcommand-only flag
+    (``bs-score claims --check-links``) is not accepted by the base command.
+    ``everywhere`` is the module-wide union, the fallback for a module whose
+    parser is not built in a named function.
+    """
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return {}, set()
+    by_function = {
+        node.name: _add_argument_flags(node)
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    everywhere = {"--help"} | _add_argument_flags(tree)  # argparse adds -h/--help
+    return by_function, everywhere
+
+
+#: The conventional parser-builder name for a command's own parser. Any other
+#: top-level ``build_<name>_parser`` function defines the ``<name>`` subcommand.
+_BASE_PARSER = "build_parser"
+_SUBCOMMAND_PARSER = re.compile(r"build_(\w+?)_parser")
+
+
+def _flags_for_script(name: str, module_path: Path) -> dict[str, set[str]]:
+    """The flags a console script accepts, keyed per (sub)command invocation."""
+    by_function, everywhere = _argparse_flags(module_path)
+    base = by_function.get(_BASE_PARSER, everywhere)
+    flags = {name: base | {"--help"}}
+    for func, sub_flags in by_function.items():
+        match = _SUBCOMMAND_PARSER.fullmatch(func)
+        if match and func != _BASE_PARSER:
+            subcommand = match.group(1).replace("_", "-")
+            flags[f"{name} {subcommand}"] = sub_flags | {"--help"}
     return flags
 
 
@@ -162,7 +201,7 @@ def load_project_facts(repo_root: Path) -> ProjectFacts:
         module = target.split(":", 1)[0]
         for candidate in _module_candidates(repo_root, module):
             if candidate.is_file():
-                facts.flags[name] = _argparse_flags(candidate)
+                facts.flags.update(_flags_for_script(name, candidate))
                 break
     return facts
 
@@ -253,17 +292,32 @@ def check_commands(text: str, facts: ProjectFacts) -> list[Claim]:
 
 
 def check_flags(text: str, facts: ProjectFacts) -> list[Claim]:
-    """Flags used with a known entry point must exist in its CLI definition."""
+    """Flags used with a known entry point must exist in its CLI definition.
+
+    A subcommand's flags are checked against the subcommand's own parser:
+    ``bs-score claims --check-links`` against the claims parser, and
+    ``bs-score --check-links`` against the base parser — which fails, because
+    the base command does not accept it.
+    """
     claims: list[Claim] = []
-    for name in sorted(facts.scripts):
-        if name not in facts.flags:
-            continue
+    # First word of each known subcommand per base command, so the base
+    # pattern does not swallow `bs-score claims --x` as its own arguments.
+    subcommands: dict[str, list[str]] = {}
+    for key in facts.flags:
+        if " " in key:
+            base, sub = key.split(" ", 1)
+            subcommands.setdefault(base, []).append(sub.split(" ", 1)[0])
+    for name in sorted(facts.flags):
         known = facts.flags[name]
+        stop = ""
+        if name in subcommands:
+            alternatives = "|".join(re.escape(s) for s in subcommands[name])
+            stop = rf"(?![ \t]+(?:{alternatives})(?![\w-]))"
         # Horizontal whitespace only: `\s+` crossed newlines, so a flag belonging
         # to the next line's command was reported as this one's — a false
         # `wrong_claim` that --emit-findings would hand straight to the scorer.
         for match in re.finditer(
-            rf"(?<![\w./-]){re.escape(name)}((?:[ \t]+[^\s`|&;]+)*)", text
+            rf"(?<![\w./-]){re.escape(name)}{stop}((?:[ \t]+[^\s`|&;]+)*)", text
         ):
             invocation = match.group(0)
             for flag in FLAG.findall(invocation):
