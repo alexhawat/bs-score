@@ -337,3 +337,13 @@ def test_this_repo_attributes_claims_flags_to_the_claims_parser():
     assert "--check-links" in facts.flags["bs-score claims"]
     assert "--check-links" not in facts.flags["bs-score"]
     assert "--fail-over" in facts.flags["bs-score"]
+
+
+def test_a_backticked_version_is_not_a_path_claim(tmp_path):
+    """`9.9.9` matched the file-ish branch of PATH_LIKE and failed as a
+    missing path. Versions are the version checker's business, not the path
+    checker's — and a bare one is not a claim at all."""
+    assert claims.check_paths("released `9.9.9` and `1.2` last week", tmp_path) == []
+    # A real missing path right next to it is still caught.
+    found = claims.check_paths("see `9.9.9` and `gone.txt`", tmp_path)
+    assert [(c.claim, c.verdict) for c in found] == [("path `gone.txt` exists", "fail")]

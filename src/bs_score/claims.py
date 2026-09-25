@@ -35,6 +35,10 @@ PYTHON_FLOOR_MENTION = re.compile(r"\bPython\s+(\d+\.\d+)\b", re.IGNORECASE)
 # A code span that looks like a path: segments separated by /, or a file-ish
 # name with a short suffix. URLs, flags, and KEY=value pairs are not paths.
 PATH_LIKE = re.compile(r"^(?:\.?[\w.-]+/)+[\w.-]+/?$|^[\w.-]+\.[A-Za-z0-9]{1,8}$")
+#: A bare version number (`9.9.9`) matches PATH_LIKE's file-ish branch but is
+#: not a path: the version checker owns version claims, and a backticked
+#: version in prose is a legitimate doc style. Dropped, not even skipped.
+PURE_VERSION = re.compile(r"\d+\.\d+(?:\.\d+)?")
 
 _URL_SCHEMES = ("http://", "https://", "mailto:", "ftp://")
 
@@ -235,6 +239,8 @@ def check_paths(text: str, repo_root: Path) -> list[Claim]:
         span = match.group(0)
         token = match.group(1).strip()
         if not PATH_LIKE.match(token):
+            continue
+        if PURE_VERSION.fullmatch(token):
             continue
         if any(token.startswith(scheme) for scheme in _URL_SCHEMES) or "=" in token:
             continue
