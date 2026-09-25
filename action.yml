@@ -83,11 +83,16 @@ runs:
         FORMAT: ${{ inputs.format }}
         REF: ${{ inputs.ref }}
         ACTION_REF: ${{ github.action_ref }}
+        ACTION_REPO: ${{ github.action_repository }}
       run: |
         set -uo pipefail
         # Pinning the action has to pin the scorer too: a default of `main`
         # meant `uses: alexhawat/bs-score@v1.2.3` still installed main's code.
         REF="${REF:-${ACTION_REF:-main}}"
+        # Install the scorer from the repository the action was resolved from,
+        # not a hardcoded upstream slug — on a fork, the fork's ref is what
+        # `uses:` promised.
+        ACTION_REPO="${ACTION_REPO:-alexhawat/bs-score}"
         args=("$FINDINGS" --repo-root "$REPO_ROOT" -q)
         for src in $SOURCES; do args+=(--sources "$src"); done
         [ -n "$FAIL_OVER" ] && args+=(--fail-over "$FAIL_OVER")
@@ -96,13 +101,19 @@ runs:
         [ "$NO_SCAN" = true ] && args+=(--no-scan)
         # report.json is always written so score/band outputs work in every
         # format; the requested format gets its own artifact when it differs.
-        uvx --from "git+https://github.com/alexhawat/bs-score@${REF}" bs-score \
+        uvx --from "git+https://github.com/${ACTION_REPO}@${REF}" bs-score \
           "${args[@]}" --format json -o report.json
         code=$?
         [ "$code" -le 1 ] || exit "$code"
         if [ "$FORMAT" != json ]; then
-          uvx --from "git+https://github.com/alexhawat/bs-score@${REF}" bs-score \
+          uvx --from "git+https://github.com/${ACTION_REPO}@${REF}" bs-score \
             "${args[@]}" --format "$FORMAT" -o "report.$FORMAT" >/dev/null
+          fmt_code=$?
+          [ "$fmt_code" -le 1 ] || exit "$fmt_code"
+          if [ ! -f "report.$FORMAT" ]; then
+            echo "report.$FORMAT was not created" >&2
+            exit 2
+          fi
         fi
         echo "score=$(python3 -c 'import json; print(json.load(open("report.json"))["score"])')" >> "$GITHUB_OUTPUT"
         echo "band=$(python3 -c 'import json; print(json.load(open("report.json"))["band"])')" >> "$GITHUB_OUTPUT"
