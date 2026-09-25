@@ -347,3 +347,35 @@ def test_a_backticked_version_is_not_a_path_claim(tmp_path):
     # A real missing path right next to it is still caught.
     found = claims.check_paths("see `9.9.9` and `gone.txt`", tmp_path)
     assert [(c.claim, c.verdict) for c in found] == [("path `gone.txt` exists", "fail")]
+
+
+def test_bare_name_claims_resolve_through_the_name_index(tmp_path):
+    """Unique match passes, several matches are ambiguous, none is false."""
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "only.txt").write_text("x")
+    for other in ("b", "c"):
+        (tmp_path / other).mkdir()
+        (tmp_path / other / "dup.txt").write_text("x")
+    found = claims.check_paths("`only.txt` `dup.txt` `gone.txt`", tmp_path)
+    assert [(c.claim, c.verdict) for c in found] == [
+        ("path `only.txt` exists", "pass"),
+        ("path `dup.txt` exists", "skip"),
+        ("path `gone.txt` exists", "fail"),
+    ]
+
+
+def test_pruned_directories_never_enter_the_name_index(tmp_path):
+    """node_modules used to be filtered out *after* the walk; now it is never
+    walked, so a same-named vendored file cannot make a claim ambiguous."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.js").write_text("x")
+    vendored = tmp_path / "node_modules" / "pkg"
+    vendored.mkdir(parents=True)
+    (vendored / "app.js").write_text("x")
+    (vendored / "only-vendored.js").write_text("x")
+
+    found = claims.check_paths("`app.js` and `only-vendored.js`", tmp_path)
+    assert [(c.claim, c.verdict) for c in found] == [
+        ("path `app.js` exists", "pass"),  # unique: the vendored copy is unseen
+        ("path `only-vendored.js` exists", "fail"),
+    ]

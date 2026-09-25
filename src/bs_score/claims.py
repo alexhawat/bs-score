@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -223,7 +224,40 @@ def _slug(heading: str) -> str:
     return re.sub(r"\s+", "-", slug)
 
 
-def check_paths(text: str, repo_root: Path) -> list[Claim]:
+#: Directories no path claim is ever about. They are walked *around*, not
+#: filtered out afterwards: descending into ``node_modules`` to discard what
+#: is found there is exactly the cost the name index exists to avoid.
+_PRUNE_DIRS = frozenset(
+    {
+        ".git",
+        ".venv",
+        "node_modules",
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        "dist",
+        "build",
+    }
+)
+
+
+def _name_index(repo_root: Path) -> dict[str, list[Path]]:
+    """Basename -> paths under ``repo_root``, from one pruned walk.
+
+    Built once per audited document; a bare-name claim (``findings.json`` in
+    prose) consults it instead of walking the tree again per token.
+    """
+    index: dict[str, list[Path]] = {}
+    for dirpath, dirnames, filenames in os.walk(repo_root):
+        dirnames[:] = [d for d in dirnames if d not in _PRUNE_DIRS]
+        for name in (*dirnames, *filenames):
+            index.setdefault(name, []).append(Path(dirpath) / name)
+    return index
+
+
+def check_paths(
+    text: str, repo_root: Path, *, index: dict[str, list[Path]] | None = None
+) -> list[Claim]:
     """Inline-code spans that look like paths must exist under the repo root.
 
     One thing that looks like a path and is not: a GitHub ``owner/repo`` slug
@@ -231,6 +265,8 @@ def check_paths(text: str, repo_root: Path) -> list[Claim]:
     the reason rather than dropped — a check that vanishes is indistinguishable
     from one that passed.
     """
+    if index is None:
+        index = _name_index(repo_root)
     claims: list[Claim] = []
     # A repo name cannot end in punctuation, so trailing sentence characters
     # swept up by the capture are not part of the slug.
@@ -254,11 +290,13 @@ def check_paths(text: str, repo_root: Path) -> list[Claim]:
                       span, line)
             )
             continue
-        claims.append(_check_path(token, span, line, repo_root))
+        claims.append(_check_path(token, span, line, repo_root, index))
     return claims
 
 
-def _check_path(token: str, span: str, line: int, repo_root: Path) -> Claim:
+def _check_path(
+    token: str, span: str, line: int, repo_root: Path, index: dict[str, list[Path]]
+) -> Claim:
     claim = f"path `{token}` exists"
     if (repo_root / token.rstrip("/")).exists():
         return Claim("path", claim, "pass", f"found {token}", span, line)
@@ -266,13 +304,7 @@ def _check_path(token: str, span: str, line: int, repo_root: Path) -> Claim:
     # this name in this tree", not "at the root". A unique match satisfies the
     # claim; several matches make it ambiguous; none makes it false.
     name = token.rstrip("/").rsplit("/", 1)[-1]
-    try:
-        matches = [
-            p for p in repo_root.rglob(name)
-            if not {".git", ".venv", "node_modules", "__pycache__"} & set(p.parts)
-        ]
-    except OSError:
-        matches = []
+    matches = index.get(name, [])
     if len(matches) == 1:
         return Claim("path", claim, "pass",
                      f"found at {matches[0].relative_to(repo_root)}", span, line)
@@ -530,7 +562,7 @@ def audit_document(
     text = doc_path.read_text(encoding="utf-8", errors="replace")
     facts = load_project_facts(repo_root)
     claims = [
-        *check_paths(text, repo_root),
+        *check_paths(text, repo_root, index=_name_index(repo_root)),
         *check_commands(text, facts),
         *check_flags(text, facts),
         *check_versions(text, facts),
