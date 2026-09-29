@@ -166,6 +166,18 @@ def test_output_file_matches_stdout(capsys, tmp_path):
     assert out_path.read_text(encoding="utf-8") == out
 
 
+def test_unwritable_output_is_a_usage_error(tmp_path, capsys):
+    """A failed -o used to escape as a traceback and exit 1 — the same signal
+    as 'over --fail-over', so a CI gate read a full disk as a bad score."""
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory")  # a child path under it cannot be created
+    code = main([VALID, *ROOT, "-q", "-o", str(blocked / "report.json")])
+    captured = capsys.readouterr()
+    assert code == EXIT_INVALID
+    assert "cannot write report" in captured.err
+    assert "Traceback" not in captured.err
+
+
 @pytest.mark.parametrize("flag", ["--version"])
 def test_version_flag(flag, capsys):
     with pytest.raises(SystemExit) as excinfo:

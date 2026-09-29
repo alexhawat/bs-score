@@ -24,6 +24,10 @@ Set it explicitly only to run a different revision of the scorer than the
 action. It falls back to `main` when the action runs from a local path
 (`uses: ./`), where GitHub provides no ref.
 
+The scorer is installed from the repository the action itself was resolved
+from (`github.action_repository`), so a fork runs its own scorer — not the
+upstream repo's — at the same ref.
+
 ## Post the Markdown report as a PR comment
 
 ```yaml

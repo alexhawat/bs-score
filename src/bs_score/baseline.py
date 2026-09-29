@@ -20,7 +20,7 @@ BASELINE_VERSION = 1
 
 
 class BaselineError(ValueError):
-    """A --baseline file is unreadable or malformed."""
+    """A --baseline file is unreadable, malformed, or unwritable."""
 
 
 def key_of(finding: dict[str, Any]) -> tuple[str, str, str]:
@@ -83,14 +83,20 @@ def write_baseline(path: Path, report: dict[str, Any]) -> None:
     finding the run's own ``--baseline`` suppressed, so the obvious
     ``--baseline b.json --write-baseline b.json`` refresh emptied the file and
     the next run scored the lot again.
+
+    Raises:
+        BaselineError: the target cannot be created or written.
     """
     findings = [*report["kept"], *report["baselined"]]
-    path.parent.mkdir(parents=True, exist_ok=True)
     document = render_baseline(findings)
-    path.write_text(
-        json.dumps(document, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(document, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise BaselineError(f"cannot write baseline {path}: {exc}") from exc
     logger.info("wrote baseline with {} finding(s) to {}", len(document["findings"]), path)
 
 

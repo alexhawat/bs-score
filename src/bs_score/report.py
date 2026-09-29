@@ -399,6 +399,15 @@ def sha256_of_document(document: Any) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _md_cell(text: Any) -> str:
+    """Escape a user-controlled value for a pipe table or a bullet line.
+
+    A ``|`` ends the cell early and a newline ends the row — a title like
+    ``a | b`` used to render as one column too many.
+    """
+    return str(text).replace("|", "\\|").replace("\r\n", " ").replace("\n", " ")
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a report as a short Markdown summary an agent can paste verbatim."""
     evidence = report["evidence"]
@@ -436,11 +445,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             affected = finding.get("files_affected")
             files = str(affected) if affected is not None else "—"
             merged = len(finding.get("merged", []))
-            title = finding["title"]
+            title = _md_cell(finding["title"])
             if merged:
                 title += f" _(merged {merged} report(s) of the same root cause)_"
             lines.append(
-                f"| `{finding['type']}` | {finding['points']} | `{finding['path']}` "
+                f"| `{finding['type']}` | {finding['points']} | `{_md_cell(finding['path'])}` "
                 f"| {files} | {title} |"
             )
         lines.append("")
@@ -448,12 +457,17 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines += ["### Rejected (not scored)", ""]
         for entry in report["rejected"]:
             label = entry.get("id", entry["index"])
-            lines.append(f"- `{label}` — {entry['reason']}: {entry['detail']}")
+            lines.append(
+                f"- `{_md_cell(label)}` — {entry['reason']}: {_md_cell(entry['detail'])}"
+            )
         lines.append("")
     if report["baselined"]:
         lines += ["### Baselined (accepted, not scored)", ""]
         for finding in report["baselined"]:
-            lines.append(f"- `{finding['id']}` — {finding['title']} (`{finding['path']}`)")
+            lines.append(
+                f"- `{_md_cell(finding['id'])}` — {_md_cell(finding['title'])} "
+                f"(`{_md_cell(finding['path'])}`)"
+            )
         lines.append("")
     return "\n".join(lines)
 

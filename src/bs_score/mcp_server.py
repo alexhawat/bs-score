@@ -18,9 +18,15 @@ from typing import Any
 
 from .claims import audit_document
 from .evidence import Verifier
-from .report import Options, build_report, sha256_of_document
-from .resources import SCHEMA_FILENAME, SCORING_FILENAME, load_json_file, locate
-from .scoring import load_scoring
+from .report import Options, PayloadError, build_report, sha256_of_document
+from .resources import (
+    SCHEMA_FILENAME,
+    SCORING_FILENAME,
+    DataFileError,
+    load_json_file,
+    locate,
+)
+from .scoring import ScoringError, load_scoring
 from .sources import load_sources
 from .sweep import TreeIndex
 
@@ -28,35 +34,50 @@ from .sweep import TreeIndex
 def audit_tool(document: str, repo_root: str = ".") -> list[dict[str, Any]]:
     """Mechanically check a document's claims (paths, commands, flags,
     versions, links, code blocks) and return one dict per check."""
-    return [
-        claim.as_dict()
-        for claim in audit_document(Path(document), Path(repo_root))
-    ]
+    doc, root = Path(document), Path(repo_root)
+    if not doc.is_file():
+        raise ValueError(f"document is not a file: {document}")
+    if not root.is_dir():
+        raise ValueError(f"repo_root is not a directory: {repo_root}")
+    return [claim.as_dict() for claim in audit_document(doc, root)]
 
 
 def score_tool(
     findings: str, repo_root: str = ".", sources: list[str] | None = None
 ) -> dict[str, Any]:
-    """Verify and score a findings payload; returns the full report."""
-    scoring_document, scoring_sha = load_json_file(locate(SCORING_FILENAME))
-    schema, schema_sha = load_json_file(locate(SCHEMA_FILENAME))
-    payload, _ = load_json_file(Path(findings))
-    scoring = load_scoring(scoring_document, scoring_sha)
-    registry = load_sources([Path(s) for s in sources or []])
-    verifier = Verifier(Path(repo_root), registry)
-    # Same tree the CLI sweeps, or this tool returns a report missing a section
-    # the CLI produces.
-    tree = TreeIndex(Path(repo_root))
-    return build_report(
-        payload,
-        scoring,
-        schema,
-        schema_sha,
-        verifier,
-        Options(),
-        findings_sha256=sha256_of_document(payload),
-        tree=tree,
-    )
+    """Verify and score a findings payload; returns the full report.
+
+    Input problems and payload/scoring failures are raised as ``ValueError``
+    so MCP surfaces them as clean tool errors, not tracebacks.
+    """
+    root = Path(repo_root)
+    if not root.is_dir():
+        raise ValueError(f"repo_root is not a directory: {repo_root}")
+    findings_path = Path(findings)
+    if not findings_path.is_file():
+        raise ValueError(f"findings is not a file: {findings}")
+    try:
+        scoring_document, scoring_sha = load_json_file(locate(SCORING_FILENAME))
+        schema, schema_sha = load_json_file(locate(SCHEMA_FILENAME))
+        payload, _ = load_json_file(findings_path)
+        scoring = load_scoring(scoring_document, scoring_sha)
+        registry = load_sources([Path(s) for s in sources or []])
+        verifier = Verifier(root, registry)
+        # Same tree the CLI sweeps, or this tool returns a report missing a
+        # section the CLI produces.
+        tree = TreeIndex(root)
+        return build_report(
+            payload,
+            scoring,
+            schema,
+            schema_sha,
+            verifier,
+            Options(),
+            findings_sha256=sha256_of_document(payload),
+            tree=tree,
+        )
+    except (PayloadError, ScoringError, DataFileError) as exc:
+        raise ValueError(str(exc)) from exc
 
 
 def create_server():

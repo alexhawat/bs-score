@@ -61,3 +61,28 @@ def test_the_scorer_ref_defaults_to_the_actions_own_ref():
     step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
     assert step["env"]["ACTION_REF"] == "${{ github.action_ref }}"
     assert 'REF="${REF:-${ACTION_REF:-main}}"' in step["run"]
+
+
+def test_the_scorer_is_installed_from_the_actions_own_repository():
+    """The uvx URL hardcoded alexhawat/bs-score, so a fork's pinned action
+    installed upstream's scorer instead of the fork's ref."""
+    action = _load()
+    step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
+    assert step["env"]["ACTION_REPO"] == "${{ github.action_repository }}"
+    installs = [ln for ln in step["run"].splitlines() if "uvx --from" in ln]
+    assert len(installs) == 2
+    for line in installs:
+        assert "alexhawat/bs-score@" not in line
+        assert "git+https://github.com/${ACTION_REPO}@${REF}" in line
+
+
+def test_the_second_uvx_run_fails_the_step_when_it_fails():
+    """The non-json format run's exit code was ignored and its report never
+    checked: the step stayed green while report.$FORMAT did not exist."""
+    action = _load()
+    step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
+    script = step["run"]
+    block = script.split('if [ "$FORMAT" != json ]', 1)[1]
+    assert "fmt_code=$?" in block
+    assert '[ "$fmt_code" -le 1 ] || exit "$fmt_code"' in block
+    assert '[ ! -f "report.$FORMAT" ]' in block

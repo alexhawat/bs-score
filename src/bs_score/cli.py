@@ -3,7 +3,8 @@
 Exit codes:
     0  scored, and at or under ``--fail-over`` when given
     1  scored, and over ``--fail-over``
-    2  unusable input (bad payload envelope, bad scoring file, bad --sources)
+    2  unusable input (bad payload envelope, bad scoring file, bad --sources,
+       unwritable --output or --write-baseline target)
     3  NOT_VALID — findings were present but nothing verified (not a clean 0)
 """
 
@@ -340,7 +341,11 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INVALID
 
     if args.write_baseline:
-        write_baseline(args.write_baseline, report)
+        try:
+            write_baseline(args.write_baseline, report)
+        except BaselineError as exc:
+            logger.error(str(exc))
+            return EXIT_INVALID
 
     if args.format == "md":
         text = render_markdown(report)
@@ -349,8 +354,15 @@ def main(argv: list[str] | None = None) -> int:
     else:
         text = json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(text, encoding="utf-8")
+        try:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(text, encoding="utf-8")
+        except OSError as exc:
+            # A read-only fs or missing permissions is an environment problem,
+            # not a score: exit 2, not the traceback-plus-1 a gate reads as
+            # "over --fail-over".
+            logger.error("cannot write report to {}: {}", args.output, exc)
+            return EXIT_INVALID
         logger.info("wrote {}", args.output)
     sys.stdout.write(text if text.endswith("\n") else text + "\n")
 
