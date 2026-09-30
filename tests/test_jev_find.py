@@ -125,6 +125,51 @@ def test_extract_units_keeps_line_numbers_after_fenced_block(tmp_path):
     assert units[0].quote == "Requires Python 3.9 or newer."
 
 
+def test_multiline_sentence_quote_is_verbatim(tmp_path):
+    """A sentence spanning source lines used to be space-joined into a quote
+    that does not occur in the file — the verifier then rejects the finding
+    find --jev itself produced."""
+    document = tmp_path / "guide.md"
+    document.write_text(
+        "Intro paragraph here.\n\n"
+        "The tool always verifies quotes against\n"
+        "the artifacts they name before scoring.\n",
+        encoding="utf-8",
+    )
+    text = document.read_text(encoding="utf-8")
+    units = extract_units_from_markdown(document, tmp_path)
+    multi = [u for u in units if "verifies quotes" in u.quote]
+    assert len(multi) == 1
+    assert multi[0].quote in text  # verbatim slice, not a space-joined rebuild
+    assert multi[0].line == 3  # the line the quote starts on
+
+
+def test_indented_and_repeated_sentences_get_their_own_lines(tmp_path):
+    document = tmp_path / "guide.md"
+    document.write_text(
+        "  Python 3.11 is required by this project.\n"
+        "Filler sentence with nothing to check here at all.\n"
+        "Python 3.11 is required by this project.\n",
+        encoding="utf-8",
+    )
+    units = extract_units_from_markdown(document, tmp_path)
+    assert [u.line for u in units] == [1, 3]
+    assert all(u.quote == "Python 3.11 is required by this project." for u in units)
+
+
+def test_paragraph_before_a_heading_without_a_blank_line_is_extracted(tmp_path):
+    """A heading flushed the pending paragraph without extracting it."""
+    document = tmp_path / "guide.md"
+    document.write_text(
+        "A claim sentence that is always checked.\n"
+        "## Heading without a blank line above\n",
+        encoding="utf-8",
+    )
+    units = extract_units_from_markdown(document, tmp_path)
+    assert [u.line for u in units] == [1]
+    assert units[0].quote == "A claim sentence that is always checked."
+
+
 def test_collect_units_docs_target():
     units = collect_units(
         FIXTURE_DOCS,
