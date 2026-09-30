@@ -149,9 +149,7 @@ def _strip_fences(text: str) -> str:
     )
 
 
-def _sentences_from_paragraph(paragraph: str) -> list[str]:
-    parts = SENTENCE_SPLIT.split(paragraph.strip())
-    return [part.strip() for part in parts if part.strip()]
+
 
 
 def _claim_like(sentence: str) -> bool:
@@ -163,7 +161,12 @@ def _claim_like(sentence: str) -> bool:
 
 
 def extract_units_from_markdown(path: Path, repo_root: Path) -> list[CandidateUnit]:
-    """Extract claim-like sentences from one markdown file."""
+    """Extract claim-like sentences from one markdown file.
+
+    Quotes are verbatim slices of the source text, and line numbers point at
+    the slice — joining paragraph lines with spaces produced quotes that do
+    not occur in the file, which the verifier then (correctly) rejects.
+    """
     text = path.read_text(encoding="utf-8", errors="replace")
     prose = _strip_fences(text)
     try:
@@ -172,47 +175,17 @@ def extract_units_from_markdown(path: Path, repo_root: Path) -> list[CandidateUn
         relative = path.name
 
     units: list[CandidateUnit] = []
-    paragraph_lines: list[str] = []
-    paragraph_start = 0
-    offset = 0
+    paragraph_start: int | None = None
+    paragraph_end = 0
 
-    for raw_line in prose.splitlines(keepends=True):
-        line = raw_line.rstrip("\n")
-        stripped = line.strip()
-        if not stripped:
-            if paragraph_lines:
-                paragraph = " ".join(paragraph_lines)
-                for sentence in _sentences_from_paragraph(paragraph):
-                    if not _claim_like(sentence):
-                        continue
-                    line_no = _line_of(text, paragraph_start + paragraph.find(sentence))
-                    units.append(
-                        CandidateUnit(
-                            path=relative,
-                            line=line_no,
-                            quote=sentence,
-                            context=_context_excerpt(text, line_no),
-                        )
-                    )
-                paragraph_lines = []
-            offset += len(raw_line)
-            continue
-        if stripped.startswith("#"):
-            paragraph_lines = []
-            paragraph_start = offset + len(raw_line)
-            offset += len(raw_line)
-            continue
-        if not paragraph_lines:
-            paragraph_start = offset
-        paragraph_lines.append(stripped)
-        offset += len(raw_line)
-
-    if paragraph_lines:
-        paragraph = " ".join(paragraph_lines)
-        for sentence in _sentences_from_paragraph(paragraph):
+    def flush() -> None:
+        nonlocal paragraph_start
+        if paragraph_start is None:
+            return
+        for sentence, start, _end in _sentence_spans(prose, paragraph_start, paragraph_end):
             if not _claim_like(sentence):
                 continue
-            line_no = _line_of(text, paragraph_start + paragraph.find(sentence))
+            line_no = _line_of(text, start)
             units.append(
                 CandidateUnit(
                     path=relative,
@@ -221,7 +194,50 @@ def extract_units_from_markdown(path: Path, repo_root: Path) -> list[CandidateUn
                     context=_context_excerpt(text, line_no),
                 )
             )
+        paragraph_start = None
+
+    offset = 0
+    for raw_line in prose.splitlines(keepends=True):
+        line = raw_line.rstrip("\n")
+        stripped = line.strip()
+        if not stripped:
+            flush()
+            offset += len(raw_line)
+            continue
+        if stripped.startswith("#"):
+            # A heading ends the paragraph too; blank lines are not required.
+            flush()
+            offset += len(raw_line)
+            continue
+        if paragraph_start is None:
+            paragraph_start = offset
+        paragraph_end = offset + len(raw_line)
+        offset += len(raw_line)
+    flush()
     return units
+
+
+def _sentence_spans(text: str, start: int, end: int) -> list[tuple[str, int, int]]:
+    """(verbatim sentence, absolute start, absolute end) within text[start:end].
+
+    SENTENCE_SPLIT consumes the whitespace between sentences, so tracking a
+    running position through the source span keeps every offset exact — a
+    bare ``find`` from 0 would misplace a sentence that occurs twice.
+    """
+    spans: list[tuple[str, int, int]] = []
+    position = start
+    for piece in SENTENCE_SPLIT.split(text[start:end]):
+        found = text.find(piece, position)
+        if found == -1 or found >= end:  # pragma: no cover - defensive
+            continue
+        sentence = piece.strip()
+        lead = len(piece) - len(piece.lstrip())
+        slice_start = found + lead
+        slice_end = slice_start + len(sentence)
+        if sentence:
+            spans.append((sentence, slice_start, slice_end))
+        position = found + len(piece)
+    return spans
 
 
 def _context_excerpt(text: str, line_no: int, *, radius: int = 3) -> str:
