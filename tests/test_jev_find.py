@@ -15,6 +15,7 @@ from bs_score.jev_find import (
     JevConfigError,
     JevDependencyError,
     build_jev_state,
+    collect_paths,
     collect_units,
     discover_findings,
     extract_units_from_markdown,
@@ -178,6 +179,36 @@ def test_collect_units_docs_target():
     )
     assert units
     assert all(unit.path == "guide.md" for unit in units)
+
+
+def test_glob_results_resolving_outside_repo_root_are_skipped(tmp_path):
+    repo = tmp_path / "repo"
+    docs = repo / "docs"
+    docs.mkdir(parents=True)
+    real = docs / "real.md"
+    real.write_text("A claim sentence.\n", encoding="utf-8")
+    outside = tmp_path / "outside.md"
+    outside.write_text("Secret content outside the repo.\n", encoding="utf-8")
+    link = docs / "leak.md"
+    try:
+        link.symlink_to(outside)
+    except OSError as exc:  # platform cannot create symlinks
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    paths = collect_paths(repo, ("docs/*.md",))
+
+    assert real in paths
+    assert link not in paths
+    assert all(path.resolve().is_relative_to(repo.resolve()) for path in paths)
+
+
+def test_literal_pattern_escaping_repo_root_is_skipped(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    outside = tmp_path / "outside.md"
+    outside.write_text("Secret content outside the repo.\n", encoding="utf-8")
+
+    assert collect_paths(repo, ("../outside.md",)) == []
 
 
 def test_collect_units_rejects_unsupported_kind():
