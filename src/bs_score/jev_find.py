@@ -269,11 +269,19 @@ def collect_units(
             f"(supported: {supported})"
         )
 
-    files = list(paths) if paths else collect_paths(repo_root, globs)
+    if paths:
+        files = list(paths)
+        for path in files:
+            if path.suffix.lower() != ".md":
+                raise JevConfigError(f"find --jev only reads markdown: {path}")
+    else:
+        files = [
+            path
+            for path in collect_paths(repo_root, globs)
+            if path.suffix.lower() == ".md"
+        ]
     units: list[CandidateUnit] = []
     for path in files:
-        if path.suffix.lower() != ".md":
-            continue
         units.extend(extract_units_from_markdown(path, repo_root))
     return units
 

@@ -216,6 +216,28 @@ def test_collect_units_rejects_unsupported_kind():
         collect_units(FIXTURE_DOCS, target_kind="prompt")
 
 
+def test_explicit_non_markdown_document_is_a_config_error(tmp_path):
+    md_file = tmp_path / "notes.md"
+    md_file.write_text("Requires Python 3.9 or newer.\n", encoding="utf-8")
+    txt_file = tmp_path / "notes.txt"
+    txt_file.write_text("Plain text, not markdown.\n", encoding="utf-8")
+
+    with pytest.raises(JevConfigError, match="notes.txt"):
+        collect_units(tmp_path, target_kind="docs", paths=(md_file, txt_file))
+
+
+def test_globbed_non_markdown_files_are_still_skipped_silently(tmp_path):
+    md_file = tmp_path / "notes.md"
+    md_file.write_text("Requires Python 3.9 or newer.\n", encoding="utf-8")
+    txt_file = tmp_path / "notes.txt"
+    txt_file.write_text("Plain text, not markdown.\n", encoding="utf-8")
+
+    units = collect_units(tmp_path, target_kind="docs", globs=("*",))
+
+    assert units
+    assert all(unit.path == "notes.md" for unit in units)
+
+
 def test_build_jev_state_filters_to_claim_units():
     units = extract_units_from_markdown(GUIDE, FIXTURE_DOCS)[:2]
     state = build_jev_state(
@@ -505,6 +527,19 @@ def test_cli_unwritable_output_is_a_usage_error(monkeypatch, tmp_path, capsys):
     assert code == EXIT_INVALID
     assert "cannot write" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_cli_explicit_non_markdown_document_exits_invalid(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
+    txt_file = tmp_path / "notes.txt"
+    txt_file.write_text("Plain text, not markdown.\n", encoding="utf-8")
+
+    code = main(
+        ["find", "--jev", "--repo-root", str(tmp_path), "--document", str(txt_file), "-q"]
+    )
+
+    assert code == EXIT_INVALID
+    assert "notes.txt" in capsys.readouterr().err
 
 
 def test_cli_resolves_document_from_repo_root(monkeypatch, tmp_path, capsys):
