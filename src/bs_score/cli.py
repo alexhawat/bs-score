@@ -335,8 +335,15 @@ def find_main(argv: list[str]) -> int:
 
     findings_text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(findings_text, encoding="utf-8")
+        try:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(findings_text, encoding="utf-8")
+        except OSError as exc:
+            # A read-only fs or missing permissions is an environment problem,
+            # not a score: exit 2, not the traceback-plus-1 a gate reads as
+            # "over --fail-over".
+            logger.error("cannot write findings to {}: {}", args.output, exc)
+            return EXIT_INVALID
         logger.info("wrote {}", args.output)
 
     if args.score:
