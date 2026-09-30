@@ -438,23 +438,41 @@ def discover_findings(
     factory = client_factory or (lambda: TypeSafeClient(model=JEV_MODEL))
     client = factory()
     findings: list[dict[str, Any]] = []
+    failed_files = 0
     try:
         for file_path in sorted(by_file):
             file_units = by_file[file_path]
-            batch = judge_file_units(
-                client,
-                target_kind=target_kind,
-                file_path=file_path,
-                units=file_units,
-                repo_root=repo_root,
-                thresholds=thresholds,
-                sdk_types=(Choice, Noul, Score),
-            )
+            try:
+                batch = judge_file_units(
+                    client,
+                    target_kind=target_kind,
+                    file_path=file_path,
+                    units=file_units,
+                    repo_root=repo_root,
+                    thresholds=thresholds,
+                    sdk_types=(Choice, Noul, Score),
+                )
+            except Exception as exc:  # noqa: BLE001  # one bad file must not zero the run
+                failed_files += 1
+                logger.error(
+                    "jev judging failed for {}: {}: {}",
+                    file_path,
+                    type(exc).__name__,
+                    exc,
+                )
+                continue
             findings.extend(batch)
     finally:
         close = getattr(client, "close", None)
         if callable(close):
             close()
+
+    if failed_files:
+        logger.warning(
+            "{} of {} file(s) failed Jev judging",
+            failed_files,
+            len(by_file),
+        )
 
     for index, finding in enumerate(findings, start=1):
         finding["id"] = f"jev-{index}"
