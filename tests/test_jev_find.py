@@ -405,6 +405,36 @@ def test_cli_emits_findings_json(monkeypatch, capsys):
     assert payload["target_kind"] == "docs"
 
 
+def test_cli_unwritable_output_is_a_usage_error(monkeypatch, tmp_path, capsys):
+    """A failed `find --jev -o` used to escape as a traceback and exit 1 — the
+    same signal as 'over --fail-over', so a CI gate read a full disk as a bad
+    score. Mirror the guarded write in main(): exit 2 with a logged error."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "bs_score.cli.discover_findings",
+        lambda *args, **kwargs: {"version": 2, "target_kind": "docs", "findings": []},
+    )
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory")  # a child path under it cannot be created
+    code = main(
+        [
+            "find",
+            "--jev",
+            "--repo-root",
+            str(FIXTURE_DOCS),
+            "--document",
+            str(GUIDE),
+            "-o",
+            str(blocked / "findings.json"),
+            "-q",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert code == EXIT_INVALID
+    assert "cannot write" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def test_cli_resolves_document_from_repo_root(monkeypatch, tmp_path, capsys):
     paths_seen = []
 
