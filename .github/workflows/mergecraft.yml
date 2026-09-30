@@ -1,0 +1,52 @@
+name: mergeCraft
+
+on:
+  # Auto-review on PR open / ready / new commits. mergeCraft reads the native
+  # GITHUB_EVENT_PATH, so no JSON payload is needed — just a prompt.
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: Prompt for the agent
+        required: true
+        type: string
+
+permissions:
+  # A review needs only read access on contents.
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+  actions: read
+  id-token: write
+
+concurrency:
+  # Serialize runs per pull request so two reviews cannot race the same PR.
+  group: mergecraft-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mergecraft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Do not persist the checkout token into .git/config: mergeCraft adds
+          # its own Authorization header, and git sends both on one request.
+          persist-credentials: false
+
+      - name: Run mergeCraft
+        uses: alexhawat/mergeCraft@521c0aedbf525a80a5bf6eddf0119ada85a8d381 # v0.1.0a1
+        with:
+          prompt: >
+            ${{ github.event_name == 'pull_request'
+                && 'Review this pull request.'
+                || github.event.inputs.prompt }}
+          model: anthropic/claude-sonnet
+          # Post mergecraft / mergecraft-approval commit-status checks.
+          status_checks: enabled
+        env:
+          # Must equal the `uses:` ref above — the container cannot read it.
+          MERGECRAFT_ACTION_SHA: 521c0aedbf525a80a5bf6eddf0119ada85a8d381
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
