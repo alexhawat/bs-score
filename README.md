@@ -95,7 +95,8 @@ $ bs-score examples/findings.hallucinated.json --repo-root examples/fixture-repo
 ```
 
 Hallucinating earns nothing: a finding whose quote is not there is rejected, not
-scored — four confident fabrications add up to zero. For what a *real* report
+scored — and when *nothing* survives, the run is **NOT_VALID**, not a clean 0.
+Four confident fabrications earn no score at all. For what a *real* report
 looks like, run `bs-score examples/findings.valid.json --repo-root
 examples/fixture-repo --format md` (it scores 17).
 
