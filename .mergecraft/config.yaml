@@ -1,0 +1,8 @@
+# mergeCraft configuration — see alexhawat/mergeCraft docs/config*.
+models:
+  - anthropic/claude-sonnet
+push: restricted
+shell: restricted
+signedCommits: false
+prApproveEnabled: false
+autoMergeEnabled: false
