@@ -19,7 +19,7 @@ def _load():
 def test_action_is_a_valid_composite_action():
     action = _load()
     assert action["runs"]["using"] == "composite"
-    assert {"score", "band", "report"} <= set(action["outputs"])
+    assert {"score", "band", "verdict", "report"} <= set(action["outputs"])
 
 
 def test_score_and_band_outputs_are_set_regardless_of_format():
@@ -33,7 +33,7 @@ def test_score_and_band_outputs_are_set_regardless_of_format():
     # No conditional may guard the output extraction lines.
     tail = script.split("--format json -o report.json", 1)[1]
     guarded = [ln for ln in tail.splitlines() if "GITHUB_OUTPUT" in ln]
-    assert len(guarded) == 3  # score, band, report
+    assert len(guarded) == 4  # score, band, verdict, report
     assert not any(ln.strip().startswith("if ") for ln in tail.splitlines() if "score=" in ln)
 
 
@@ -84,5 +84,59 @@ def test_the_second_uvx_run_fails_the_step_when_it_fails():
     script = step["run"]
     block = script.split('if [ "$FORMAT" != json ]', 1)[1]
     assert "fmt_code=$?" in block
-    assert '[ "$fmt_code" -le 1 ] || exit "$fmt_code"' in block
+    assert 'case "$fmt_code" in 0|1|3) ;; *) exit "$fmt_code" ;; esac' in block
     assert '[ ! -f "report.$FORMAT" ]' in block
+
+
+def _extraction_snippets(script: str) -> dict[str, str]:
+    """The ``python3 -c '...'`` one-liners the step runs to produce each output."""
+    import re
+
+    found = {}
+    for name, code in re.findall(r'echo "(\w+)=\$\(python3 -c \'(.*?)\'\)"', script):
+        found[name] = code
+    return found
+
+
+def test_a_not_valid_run_still_writes_every_output(tmp_path, capsys):
+    """exit 3 must pass the gate, and `score` must not be the string "None".
+
+    The gate was `[ "$code" -le 1 ] || exit`, written before NOT_VALID existed:
+    a run that exited 3 wrote no outputs and no report.md, so the documented
+    `if: always()` comment step read a file that was never created.
+    """
+    import subprocess
+    import sys
+
+    from conftest import EXAMPLES, FIXTURE_REPO
+
+    from bs_score.cli import EXIT_NOT_VALID, main
+
+    action = _load()
+    step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
+    script = step["run"]
+    assert 'case "$code" in 0|1|3) ;; *) exit "$code" ;; esac' in script
+    assert '[ "$code" -le 1 ]' not in script
+
+    # A real NOT_VALID run, exactly as the step produces report.json.
+    report = tmp_path / "report.json"
+    code = main([
+        str(EXAMPLES / "findings.hallucinated.json"),
+        "--repo-root", str(FIXTURE_REPO), "-o", str(report), "-q",
+    ])
+    capsys.readouterr()
+    assert code == EXIT_NOT_VALID
+    assert report.is_file(), "the report must exist before the exit code is returned"
+
+    # Run the step's own extraction one-liners against it.
+    snippets = _extraction_snippets(script)
+    assert set(snippets) == {"score", "band", "verdict"}
+    values = {
+        name: subprocess.run(
+            [sys.executable, "-c", code], cwd=tmp_path, capture_output=True, text=True,
+            check=True,
+        ).stdout.strip()
+        for name, code in snippets.items()
+    }
+    assert values == {"score": "", "band": "NOT_VALID", "verdict": "not_valid"}
+    assert "None" not in values.values()

@@ -53,6 +53,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **Breaking — a fabricated audit is `NOT_VALID`, not a clean 0.** When findings
+  were submitted and an enabled verifier rejected every one, the report carries
+  `verdict: not_valid`, `score: null`, `band: NOT_VALID`, and the CLI exits
+  **3**. Anything gating on `exit 0`/`1` or reading `score` as a number must
+  handle this. `--require-depth` no longer overrides a `not_valid` verdict.
+
 - **The skill is named `bs-score`**, matching the CLI, the distribution and the
   convention every runtime's own examples follow. Its folder is
   `~/.claude/skills/bs-score` (and the equivalent elsewhere), and the `name:`
@@ -72,6 +78,16 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The Action died on every `NOT_VALID` run with no outputs.** Its gate was
+  `[ "$code" -le 1 ] || exit`, written before exit code 3 existed, so a
+  `not_valid` run exited before `score`/`band`/`report` were set or `report.md`
+  was written — the documented `if: always()` comment step then read a file
+  that did not exist. The gate now passes 0, 1 and 3 (report.json exists for
+  all three), `score` is empty rather than the literal string `None` when it is
+  null, and a `verdict` output is added. The step still fails on 3.
+- The README said four fabrications "add up to zero" directly under a demo that
+  prints `NOT_VALID`, and nine lines above a sentence saying it is "not a clean
+  0".
 - **`--write-baseline` writes everything the run accepted**, `kept` *and*
   `baselined`. It wrote only `kept`, so `--baseline b.json --write-baseline
   b.json` — the obvious way to refresh a baseline — truncated the file to

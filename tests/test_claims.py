@@ -143,7 +143,9 @@ ILLUSTRATIVE_SPANS = {"`.claude/agents/x.md`", "`.cursor/rules/y.mdc`", "`src/a.
 #: What a changelog names that is not a claim about the tree as it stands: the
 #: versions it exists to record, a field reference, and values a past release
 #: got wrong. Passed as --ignore, so each is reported as a skip, not dropped.
-CHANGELOG_IGNORES = ("v2.0.0", "depth.status", "src/a.py", "alexhawat/bots-*")
+# `report.*` is the file the Action writes at runtime — the case --ignore was
+# built for, and the changelog entry describing that fix has to name it.
+CHANGELOG_IGNORES = ("v2.0.0", "depth.status", "src/a.py", "alexhawat/bots-*", "report.*")
 
 
 #: The README's install table names where the skill goes in *your* checkout,

@@ -10,7 +10,13 @@ The composite action is [`action.yml`](../action.yml). Minimum usage:
 ```
 
 Inputs: `findings`, `repo-root`, `sources`, `fail-over`, `require-depth`,
-`no-scan`, `baseline`, `format`, `ref`. Outputs: `score`, `band`, `report`.
+`no-scan`, `baseline`, `format`, `ref`. Outputs: `score`, `band`, `verdict`,
+`report`.
+
+When findings were submitted but none verified, the run is **NOT_VALID**: the
+scorer exits 3, so the step fails, but `score` (empty — there is none), `band`
+(`NOT_VALID`), `verdict` (`not_valid`) and the report file are all written
+first. The PR-comment recipe below uses `if: always()` for exactly this reason.
 
 `ref` selects the revision of this repository the scorer is installed from. It
 defaults to the ref the action itself was resolved at, so pinning the action
