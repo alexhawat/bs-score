@@ -126,19 +126,26 @@ def default_doc_paths(repo_root: Path) -> list[Path]:
 
 def collect_paths(repo_root: Path, globs: tuple[str, ...]) -> list[Path]:
     """Resolve repeatable path globs relative to repo_root."""
+    root = repo_root.resolve()
     seen: set[Path] = set()
     ordered: list[Path] = []
+
+    def accept(path: Path) -> None:
+        if not path.is_file():
+            return
+        if not path.resolve().is_relative_to(root):
+            logger.warning("skipping {}: resolves outside --repo-root", path)
+            return
+        if path not in seen:
+            seen.add(path)
+            ordered.append(path)
+
     for pattern in globs:
         if any(char in pattern for char in "*?[]"):
             for path in sorted(repo_root.glob(pattern)):
-                if path.is_file() and path not in seen:
-                    seen.add(path)
-                    ordered.append(path)
+                accept(path)
             continue
-        path = repo_root / pattern
-        if path.is_file() and path not in seen:
-            seen.add(path)
-            ordered.append(path)
+        accept(repo_root / pattern)
     return ordered
 
 
