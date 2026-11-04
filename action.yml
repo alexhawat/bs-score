@@ -111,9 +111,11 @@ runs:
         [ "$NO_SCAN" = true ] && args+=(--no-scan)
         # report.json is always written so score/band outputs work in every
         # format; the requested format gets its own artifact when it differs.
+        # GitHub invokes bash with -e: capture expected failures explicitly so
+        # reports and outputs are written before returning the scorer's status.
+        code=0
         uvx --from "git+https://github.com/${ACTION_REPO}@${REF}" bs-score \
-          "${args[@]}" --format json -o report.json
-        code=$?
+          "${args[@]}" --format json -o report.json || code=$?
         # 0 scored, 1 over --fail-over, 3 NOT_VALID: report.json exists for all
         # three, so the outputs below are real. Only 2 (unusable input) and the
         # unexpected leave nothing to report; bail before touching report.json.
@@ -121,9 +123,9 @@ runs:
         # no report.md for an `if: always()` comment step to read.
         case "$code" in 0|1|3) ;; *) exit "$code" ;; esac
         if [ "$FORMAT" != json ]; then
+          fmt_code=0
           uvx --from "git+https://github.com/${ACTION_REPO}@${REF}" bs-score \
-            "${args[@]}" --format "$FORMAT" -o "report.$FORMAT" >/dev/null
-          fmt_code=$?
+            "${args[@]}" --format "$FORMAT" -o "report.$FORMAT" >/dev/null || fmt_code=$?
           case "$fmt_code" in 0|1|3) ;; *) exit "$fmt_code" ;; esac
           if [ ! -f "report.$FORMAT" ]; then
             echo "report.$FORMAT was not created" >&2

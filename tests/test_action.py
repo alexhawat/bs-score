@@ -6,8 +6,14 @@ so the README's own `format: md` example produced empty outputs.
 
 from __future__ import annotations
 
+import os
+import shlex
+import subprocess
+import sys
+
+import pytest
 import yaml
-from conftest import REPO
+from conftest import EXAMPLES, FIXTURE_REPO, REPO
 
 ACTION = REPO / "action.yml"
 
@@ -88,55 +94,80 @@ def test_the_second_uvx_run_fails_the_step_when_it_fails():
     assert '[ ! -f "report.$FORMAT" ]' in block
 
 
-def _extraction_snippets(script: str) -> dict[str, str]:
-    """The ``python3 -c '...'`` one-liners the step runs to produce each output."""
-    import re
+@pytest.fixture
+def run_action(tmp_path):
+    """Run the full step with GitHub's shell flags and the local, real CLI."""
+    script = next(s["run"] for s in _load()["runs"]["steps"] if s.get("id") == "score")
+    script_path = tmp_path / "step.sh"
+    script_path.write_text(script, encoding="utf-8")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    # Replace only uvx's network installation; keep scoring and rendering real.
+    uvx = bin_dir / "uvx"
+    uvx.write_text(
+        "#!/bin/bash\nshift 3\nexec " + shlex.quote(sys.executable)
+        + " -c 'from bs_score.cli import run; run()' \"$@\"\n",
+        encoding="utf-8",
+    )
+    uvx.chmod(0o755)
+    output = tmp_path / "outputs"
+    output.touch()
 
-    found = {}
-    for name, code in re.findall(r'echo "(\w+)=\$\(python3 -c \'(.*?)\'\)"', script):
-        found[name] = code
-    return found
+    def run(fixture="valid", report_format="json", fail_over=""):
+        env = {
+            **os.environ,
+            "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+            "FINDINGS": str(EXAMPLES / f"findings.{fixture}.json"),
+            "REPO_ROOT": str(FIXTURE_REPO),
+            "SOURCES": "",
+            "FAIL_OVER": fail_over,
+            "BASELINE": "",
+            "REQUIRE_DEPTH": "",
+            "NO_SCAN": "",
+            "FORMAT": report_format,
+            "REF": "",
+            "ACTION_REF": "",
+            "ACTION_REPO": "",
+            "GITHUB_OUTPUT": str(output),
+        }
+        result = subprocess.run(
+            ["bash", "--noprofile", "--norc", "-eo", "pipefail", str(script_path)],
+            cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+        )
+        values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        return result, values
+
+    return run
 
 
-def test_a_not_valid_run_still_writes_every_output(tmp_path, capsys):
-    """exit 3 must pass the gate, and `score` must not be the string "None".
-
-    The gate was `[ "$code" -le 1 ] || exit`, written before NOT_VALID existed:
-    a run that exited 3 wrote no outputs and no report.md, so the documented
-    `if: always()` comment step read a file that was never created.
-    """
-    import subprocess
-    import sys
-
-    from conftest import EXAMPLES, FIXTURE_REPO
-
-    from bs_score.cli import EXIT_NOT_VALID, main
-
-    action = _load()
-    step = next(s for s in action["runs"]["steps"] if s.get("id") == "score")
-    script = step["run"]
-    assert 'case "$code" in 0|1|3) ;; *) exit "$code" ;; esac' in script
-    assert '[ "$code" -le 1 ]' not in script
-
-    # A real NOT_VALID run, exactly as the step produces report.json.
-    report = tmp_path / "report.json"
-    code = main([
-        str(EXAMPLES / "findings.hallucinated.json"),
-        "--repo-root", str(FIXTURE_REPO), "-o", str(report), "-q",
-    ])
-    capsys.readouterr()
-    assert code == EXIT_NOT_VALID
-    assert report.is_file(), "the report must exist before the exit code is returned"
-
-    # Run the step's own extraction one-liners against it.
-    snippets = _extraction_snippets(script)
-    assert set(snippets) == {"score", "band", "verdict"}
-    values = {
-        name: subprocess.run(
-            [sys.executable, "-c", code], cwd=tmp_path, capture_output=True, text=True,
-            check=True,
-        ).stdout.strip()
-        for name, code in snippets.items()
+@pytest.mark.parametrize("report_format", ["json", "md", "sarif"])
+@pytest.mark.parametrize(
+    ("fixture", "fail_over", "exit_code", "score", "band", "verdict"),
+    [
+        ("valid", "", 0, "17", "bullshit", "pass"),
+        ("valid", "0", 1, "17", "bullshit", "fail"),
+        ("hallucinated", "", 3, "", "NOT_VALID", "not_valid"),
+    ],
+)
+def test_action_writes_outputs_before_returning_verdict(
+    run_action, tmp_path, report_format, fixture, fail_over, exit_code, score, band, verdict,
+):
+    result, values = run_action(fixture, report_format, fail_over)
+    assert result.returncode == exit_code, result.stderr
+    assert values == {
+        "score": score, "band": band, "verdict": verdict, "report": f"report.{report_format}",
     }
-    assert values == {"score": "", "band": "NOT_VALID", "verdict": "not_valid"}
-    assert "None" not in values.values()
+    assert (tmp_path / "report.json").is_file()
+    assert (tmp_path / f"report.{report_format}").stat().st_size > 0
+
+
+@pytest.mark.parametrize(
+    ("fixture", "report_format", "json_exists"),
+    [("missing", "md", False), ("valid", "invalid-format", True)],
+)
+def test_action_stops_on_unusable_input(run_action, tmp_path, fixture, report_format, json_exists):
+    result, values = run_action(fixture, report_format)
+    assert result.returncode == 2, result.stderr
+    assert values == {}
+    assert (tmp_path / "report.json").exists() == json_exists
+    assert not (tmp_path / f"report.{report_format}").exists()
