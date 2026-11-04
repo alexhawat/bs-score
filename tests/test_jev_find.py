@@ -343,6 +343,47 @@ def test_discover_findings_batches_by_file(monkeypatch):
         assert set(finding) >= {"id", "type", "title", "path", "quote", "target", "confidence"}
 
 
+class FlakyJevClient(FakeJevClient):
+    """FakeJevClient that raises on files whose path ends with fail_on."""
+
+    def __init__(self, *, fail_on: str, **kwargs) -> None:  # noqa: ANN003
+        super().__init__(**kwargs)
+        self.fail_on = fail_on
+
+    def system_one(self, state, questions, *, model=None):  # noqa: ANN001
+        if state["file"].endswith(self.fail_on):
+            raise RuntimeError("boom")
+        return super().system_one(state, questions, model=model)
+
+
+def test_a_failing_file_is_skipped_and_the_rest_of_the_run_survives(monkeypatch, tmp_path):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
+    (tmp_path / "a.md").write_text("Requires Python 3.9 or newer.\n")
+    (tmp_path / "b.md").write_text("Supports Linux, macOS, and Windows.\n")
+    flaky = FlakyJevClient(fail_on="a.md", keep=0.95)
+    payload = discover_findings(
+        tmp_path,
+        target_kind="docs",
+        client_factory=lambda: flaky,
+    )
+    assert [finding["path"] for finding in payload["findings"]] == ["b.md:1"]
+    assert payload["audit"]["files_read"] == ["a.md", "b.md"]
+
+
+def test_all_files_failing_yields_an_empty_payload_not_a_traceback(monkeypatch, tmp_path):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "test-key")
+    (tmp_path / "a.md").write_text("Requires Python 3.9 or newer.\n")
+    (tmp_path / "b.md").write_text("Supports Linux, macOS, and Windows.\n")
+    flaky = FlakyJevClient(fail_on=".md", keep=0.95)
+    payload = discover_findings(
+        tmp_path,
+        target_kind="docs",
+        client_factory=lambda: flaky,
+    )
+    assert payload["findings"] == []
+    assert payload["audit"]["files_read"] == ["a.md", "b.md"]
+
+
 def test_parse_unit_judgment_from_batched_response():
     response = SimpleNamespace(
         answers={
